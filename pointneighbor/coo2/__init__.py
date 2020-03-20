@@ -18,5 +18,5 @@ assert (sod <= rc * rc).all()
 from .ful_simple import coo2_ful_simple
 from .ful_pntsft import coo2_ful_pntsft
 from .cel_adj import cel_adj, number_division
-from .blg import blg
+from .cel_blg import blg
 from .cel import coo2_cel
