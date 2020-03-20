@@ -37,14 +37,12 @@ def main():
     # pntsft = pn.coo2.coo_duo_fullindex_pntsft
 
     def using_simple():
-        vda = simple(p, rc)
-        # vda = pn.coo2.coo_duo_fullindex_simple(p, rc)
-        return vda.adj.size()[1]
+        vsa = simple(p, rc)
+        return vsa.adj.size()[1]
 
     def using_pntsft():
-        vda = pntsft(p, rc)
-        # vda = pn.coo2.coo_duo_fullindex_pntsft(p, rc)
-        return vda.adj.size()[1]
+        vsa = pntsft(p, rc)
+        return vsa.adj.size()[1]
 
     assert using_simple() == using_pntsft(), (using_simple(), using_pntsft())
     print(timeit(using_simple))

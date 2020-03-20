@@ -55,6 +55,19 @@ def n_duo_single_lattice(p: Pnt, rc: float):
     return len(i) * 2
 
 
+def n_trio_single_lattice(p: Pnt, rc: float):
+    cutoff = rc
+    cell = p.cel[0]
+    pbc = p.pbc[0]
+    padding_mask = ~p.ent
+    coordinates = p.pos
+    shifts = aev.compute_shifts(cell, pbc, cutoff)
+    i, j, s = aev.neighbor_pairs(
+        padding_mask, coordinates, cell, shifts, cutoff)
+    a3, b3, c3, s1, s2 = aev.triple_by_molecule(i, j)
+    return len(a3) * 2
+
+
 def n_duo_multi_lattice(p: Pnt, rc: float):
     n_bch = p.cel.size()[0]
     n = 0

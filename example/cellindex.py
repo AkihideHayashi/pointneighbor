@@ -29,17 +29,17 @@ def main():
     cel_adj = script(pn.coo2.cel_adj)(p, rc)
     get_blg = script(pn.coo2.blg)
     get_adj = script(pn.coo2.coo2_cel)
-    get_vda = script(pn.vec_sod_adj)
+    get_vsa = script(pn.vec_sod_adj)
 
     def using_simple():
-        vda = simple(p, rc)
-        return vda.adj.size()[1]
+        vsa = simple(p, rc)
+        return vsa.adj.size()[1]
 
     def using_pntsft():
         blg = get_blg(cel_adj, ep)
         adj = get_adj(cel_adj, blg)
-        vda = get_vda(p, adj, rc)
-        return vda.adj.size()[1]
+        vsa = get_vsa(p, adj, rc)
+        return vsa.adj.size()[1]
 
     assert using_simple() == using_pntsft(), (using_simple(), using_pntsft())
     print('simple:', timeit(using_simple))

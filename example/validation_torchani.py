@@ -22,8 +22,8 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
 
     def using_pn():
-        vda = pn.coo2.coo2_ful_simple(p, rc)
-        return vda.adj.size()[1]
+        vsa = pn.coo2.coo2_ful_simple(p, rc)
+        return vsa.adj.size()[1]
 
     def using_aev():
         return n_duo_multi_lattice(p, rc)

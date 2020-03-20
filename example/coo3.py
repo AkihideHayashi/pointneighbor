@@ -1,7 +1,7 @@
 import time
 import torch
 import pointneighbor as pn
-from common import n_duo_single_lattice, random_particle, CellParameter
+from common import n_trio_single_lattice, random_particle, CellParameter
 
 
 def timeit(f):
@@ -23,10 +23,11 @@ def main():
 
     def using_pn():
         vsa = pn.coo2.coo2_ful_simple(p, rc)
-        return vsa.adj.size()[1]
+        jk3 = pn.coo3.coo3(vsa.adj)
+        return jk3.size()[1]
 
     def using_aev():
-        return n_duo_single_lattice(p, rc)
+        return n_trio_single_lattice(p, rc)
 
     assert using_pn() == using_aev()
     print('torchani        :', timeit(using_aev))
