@@ -31,8 +31,8 @@ def main():
     atoms = [bulk('Pt') * (1, 1, 1)] + [bulk('Pt') * (4, 4, 4)] * 4
     p = ase_to_particles(atoms)
 
-    simple = script(pn.coo2.coo2_ful_simple)
-    pntsft = script(pn.coo2.coo2_ful_pntsft)
+    simple = script(pn.coo2_ful_simple)
+    pntsft = script(pn.coo2_ful_pntsft)
     # simple = pn.coo2.coo_duo_fullindex_simple
     # pntsft = pn.coo2.coo_duo_fullindex_pntsft
 
@@ -45,8 +45,8 @@ def main():
         return vsa.adj.size()[1]
 
     assert using_simple() == using_pntsft(), (using_simple(), using_pntsft())
-    print(timeit(using_simple))
-    print(timeit(using_pntsft))
+    print('simple: ', timeit(using_simple))
+    print('pntsft: ', timeit(using_pntsft))
 
 
 if __name__ == "__main__":

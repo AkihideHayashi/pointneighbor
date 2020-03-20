@@ -25,10 +25,10 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
     ep = pn.exp_pcl(p)
 
-    simple = script(pn.coo2.coo2_ful_simple)
-    cel_adj = script(pn.coo2.cel_adj)(p, rc)
-    get_blg = script(pn.coo2.blg)
-    get_adj = script(pn.coo2.coo2_cel)
+    simple = script(pn.coo2_ful_simple)
+    cel_adj = script(pn.cel_adj)(p, rc)
+    get_blg = script(pn.cel_blg)
+    get_adj = script(pn.coo2_cel)
     get_vsa = script(pn.vec_sod_adj)
 
     def using_simple():

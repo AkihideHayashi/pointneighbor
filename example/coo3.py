@@ -22,8 +22,8 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
 
     def using_pn():
-        vsa = pn.coo2.coo2_ful_simple(p, rc)
-        jk3 = pn.coo3.coo3(vsa.adj)
+        vsa = pn.coo2_ful_simple(p, rc)
+        jk3 = pn.coo3(vsa.adj)
         return jk3.size()[1]
 
     def using_aev():

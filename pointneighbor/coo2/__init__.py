@@ -17,6 +17,6 @@ assert (sod <= rc * rc).all()
 """
 from .ful_simple import coo2_ful_simple
 from .ful_pntsft import coo2_ful_pntsft
-from .cel_adj import cel_adj, number_division
-from .cel_blg import blg
+from .cel_adj import cel_adj, cel_num_div
+from .cel_blg import cel_blg
 from .cel import coo2_cel

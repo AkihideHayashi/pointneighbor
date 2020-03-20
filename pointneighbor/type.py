@@ -66,3 +66,7 @@ def vec_sod_adj(pcl: Pnt, adj: Adj, rc: float):
     val_ent = ei & ej
     val = val_cut & val_ent
     return VecSodAdj(vec=vec[val], sod=sod[val], adj=nijs[:, val], sft=sft)
+
+
+def vec_sod_adj_to_adj(vsa: VecSodAdj):
+    return Adj(adj=vsa.adj, sft=vsa.sft)

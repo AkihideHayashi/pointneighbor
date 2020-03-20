@@ -11,7 +11,7 @@ class CelAdj(NamedTuple):
     div: Tensor
 
 
-def number_division(cel_mat: Tensor, rc: float):
+def cel_num_div(cel_mat: Tensor, rc: float):
     ndiv = ((cel_mat / rc).norm(p=2, dim=-1) - 1e-4).floor().to(torch.int64)
     return ndiv
 
@@ -19,7 +19,7 @@ def number_division(cel_mat: Tensor, rc: float):
 def cel_adj(p: Pnt, rc: float, num_div: Optional[Tensor] = None):
     ep: PntExt = exp_pcl(p)
     if num_div is None:
-        num_div = number_division(ep.cel_mat, rc)
+        num_div = cel_num_div(ep.cel_mat, rc)
     max_div, _ = num_div.max(0)
     pbc = ep.pbc
     num_adj = fn.minimum_neighbor(ep.cel_rec * num_div[:, None, :], pbc, rc)
