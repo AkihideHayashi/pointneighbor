@@ -62,9 +62,9 @@ def n_trio_single_lattice(p: Pnt, rc: float):
     padding_mask = ~p.ent
     coordinates = p.pos
     shifts = aev.compute_shifts(cell, pbc, cutoff)
-    i, j, s = aev.neighbor_pairs(
+    i, j, _ = aev.neighbor_pairs(
         padding_mask, coordinates, cell, shifts, cutoff)
-    a3, b3, c3, s1, s2 = aev.triple_by_molecule(i, j)
+    a3, _, _, _, _ = aev.triple_by_molecule(i, j)
     return len(a3) * 2
 
 
