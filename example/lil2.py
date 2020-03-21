@@ -21,7 +21,8 @@ def main():
               for _ in range(n_bch)]
     pbc = torch.tensor([[True, True, True] for _ in range(n_bch)])
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
-    vsa = pn.coo2_ful_simple(p, rc)
+    pe = pn.pnt_exp(p)
+    vsa = pn.coo2_ful_simple(pe, rc)
     adj = script(pn.lil2)(pn.vec_sod_adj_to_adj(vsa), p.ent.size())
 
     mask_coo_to_lil = pn.mask_coo_to_lil(

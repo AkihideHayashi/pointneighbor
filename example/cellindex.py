@@ -23,22 +23,22 @@ def main():
     pbc = torch.rand((n_bch, n_dim)) > -1
 
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
-    ep = pn.exp_pcl(p)
+    ep = pn.pnt_exp(p)
 
     simple = script(pn.coo2_ful_simple)
-    cel_adj = script(pn.cel_adj)(p, rc)
+    cel_adj = script(pn.cel_adj)(ep, rc)
     get_blg = script(pn.cel_blg)
     get_adj = script(pn.coo2_cel)
     get_vsa = script(pn.vec_sod_adj)
 
     def using_simple():
-        vsa = simple(p, rc)
+        vsa = simple(ep, rc)
         return vsa.adj.size()[1]
 
     def using_pntsft():
         blg = get_blg(cel_adj, ep)
         adj = get_adj(cel_adj, blg)
-        vsa = get_vsa(p, adj, rc)
+        vsa = get_vsa(ep, adj, rc)
         return vsa.adj.size()[1]
 
     assert using_simple() == using_pntsft(), (using_simple(), using_pntsft())

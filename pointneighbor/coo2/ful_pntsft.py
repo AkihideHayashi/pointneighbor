@@ -1,13 +1,13 @@
 import torch
 from torch import Tensor
-from ..type import Pnt, exp_pcl, VecSodAdj
+from ..type import PntExp, VecSodAdj
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
 
 
-def coo2_ful_pntsft(p: Pnt, rc: float):
+def coo2_ful_pntsft(pe: PntExp, rc: float) -> VecSodAdj:
     """An implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
     tensor and remove redundants.
@@ -17,24 +17,23 @@ def coo2_ful_pntsft(p: Pnt, rc: float):
     This function is not efficient if your system is big.
     If lattice is uniform, coo2_fullindex_simple has less overhead.
     """
-    device = p.pos.device
-    ep = exp_pcl(p)
-    n_bch, n_pnt, _ = ep.pos_xyz.size()
-    num_rpt = fn.minimum_neighbor(ep.cel_rec, ep.pbc, rc)
+    device = pe.pos_xyz.device
+    n_bch, n_pnt, _ = pe.pos_xyz.size()
+    num_rpt = fn.minimum_neighbor(pe.cel_rec, pe.pbc, rc)
     max_rpt, _ = num_rpt.max(dim=0)
     sft_cel = fn.arange_prod(max_rpt * 2 + 1) - max_rpt
-    sft_xyz = sft_cel.to(ep.cel_mat) @ ep.cel_mat
+    sft_xyz = sft_cel.to(pe.cel_mat) @ pe.cel_mat
     n_sft, _ = sft_cel.size()
-    pos_i = ep.pos_xyz
-    pos_j = ep.pos_xyz[:, :, None, :] + sft_xyz[:, None, :, :]
+    pos_i = pe.pos_xyz
+    pos_j = pe.pos_xyz[:, :, None, :] + sft_xyz[:, None, :, :]
 
-    msk_f, msk_t = _mask_transform(sft_cel, num_rpt, ep.pbc, n_bch, n_pnt)
+    msk_f, msk_t = _mask_transform(sft_cel, num_rpt, pe.pbc, n_bch, n_pnt)
     pos_flt_j = _transform(pos_j, msk_f, msk_t)[:, None, :, :]
     pos_flt_i = pos_i[:, :, None, :]
     vec = pos_flt_i - pos_flt_j
     sod = fn.square_of_distance(vec, dim=-1)
     val_cut = sod <= rc * rc
-    ent_i = ep.ent[:, :, None]
+    ent_i = pe.ent[:, :, None]
     val = val_cut & msk_t[:, None, :] & ent_i
     n = fn.arange([n_bch, n_pnt], dim=0).to(device)[:, :, None].expand_as(sod)
     i = fn.arange([n_bch, n_pnt], dim=1).to(device)[:, :, None].expand_as(sod)
@@ -44,7 +43,7 @@ def coo2_ful_pntsft(p: Pnt, rc: float):
                    msk_f, msk_t)[:, None, :].expand_as(sod)
     adj = torch.stack([n[val], i[val], j[val], s[val]])
     vsa = VecSodAdj(vec=vec[val], sod=sod[val], adj=adj, sft=sft_cel)
-    ret = _contract_idt_ent(vsa, ep.ent)
+    ret = _contract_idt_ent(vsa, pe.ent)
     return ret
 
 

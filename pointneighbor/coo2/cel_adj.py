@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional
 from torch import Tensor
 import torch
 from .. import functional as fn
-from ..type import Pnt, PntExt, exp_pcl
+from ..type import PntExp
 
 
 class CelAdj(NamedTuple):
@@ -11,24 +11,25 @@ class CelAdj(NamedTuple):
     div: Tensor
 
 
-def cel_num_div(cel_mat: Tensor, rc: float):
+def cel_num_div(cel_mat: Tensor, rc: float) -> Tensor:
     ndiv = ((cel_mat / rc).norm(p=2, dim=-1) - 1e-4).floor().to(torch.int64)
     return ndiv
 
 
-def cel_adj(p: Pnt, rc: float, num_div: Optional[Tensor] = None):
-    ep: PntExt = exp_pcl(p)
+def cel_adj(pe: PntExp, rc: float, num_div: Optional[Tensor] = None) -> CelAdj:
+    if not pe.pbc.all():
+        raise RuntimeError('cell index is only for full pbc.')
     if num_div is None:
-        num_div = cel_num_div(ep.cel_mat, rc)
+        num_div = cel_num_div(pe.cel_mat, rc)
     max_div, _ = num_div.max(0)
-    pbc = ep.pbc
-    num_adj = fn.minimum_neighbor(ep.cel_rec * num_div[:, None, :], pbc, rc)
+    pbc = pe.pbc
+    num_adj = fn.minimum_neighbor(pe.cel_rec * num_div[:, None, :], pbc, rc)
     max_adj, _ = num_adj.max(0)
     pcl = fn.arange_prod(max_div)  # parcel
     sft_pcl = fn.arange_prod(max_adj * 2 + 1) - max_adj
 
     n_sft = sft_pcl.size()[0]
-    n_bch, _, n_dim = ep.pos_xyz.size()
+    n_bch, _, n_dim = pe.pos_xyz.size()
     n_pcl = pcl.size()[0]
 
     size = [n_bch, n_pcl, n_sft, n_dim]

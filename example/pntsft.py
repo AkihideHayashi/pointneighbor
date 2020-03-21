@@ -30,6 +30,7 @@ def main():
     rc = 6.0
     atoms = [bulk('Pt') * (1, 1, 1)] + [bulk('Pt') * (4, 4, 4)] * 4
     p = ase_to_particles(atoms)
+    pe = pn.pnt_exp(p)
 
     simple = script(pn.coo2_ful_simple)
     pntsft = script(pn.coo2_ful_pntsft)
@@ -37,11 +38,11 @@ def main():
     # pntsft = pn.coo2.coo_duo_fullindex_pntsft
 
     def using_simple():
-        vsa = simple(p, rc)
+        vsa = simple(pe, rc)
         return vsa.adj.size()[1]
 
     def using_pntsft():
-        vsa = pntsft(p, rc)
+        vsa = pntsft(pe, rc)
         return vsa.adj.size()[1]
 
     assert using_simple() == using_pntsft(), (using_simple(), using_pntsft())

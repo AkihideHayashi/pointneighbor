@@ -20,9 +20,10 @@ def main():
               for _ in range(n_bch)]
     pbc = torch.tensor([[True, True, True] for _ in range(n_bch)])
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
+    pe = pn.pnt_exp(p)
 
     def using_pn():
-        vsa = pn.coo2_ful_simple(p, rc)
+        vsa = pn.coo2_ful_simple(pe, rc)
         jk3 = pn.coo3(vsa.adj)
         return jk3.size()[1]
 

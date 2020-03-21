@@ -20,3 +20,4 @@ from .ful_pntsft import coo2_ful_pntsft
 from .cel_adj import cel_adj, cel_num_div
 from .cel_blg import cel_blg
 from .cel import coo2_cel
+from .cel_adj import CelAdj

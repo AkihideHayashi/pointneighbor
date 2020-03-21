@@ -3,9 +3,10 @@ import torch
 from torch import Tensor
 
 
-def to_unit_cell(pos_ltc: Tensor):
+def to_unit_cell(pos_ltc: Tensor, pbc: Tensor):
     """Mod pos_ltc 1."""
-    return pos_ltc - pos_ltc.floor()
+    sft = -pos_ltc.floor() * pbc[:, None, :]
+    return pos_ltc + sft
 
 
 def in_unit_cell(pos_ltc: Tensor, ent: Tensor):

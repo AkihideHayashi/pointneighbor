@@ -20,7 +20,7 @@ def _pnt_pcl(cel_adj: CelAdj, blg: Tensor):
     return ret
 
 
-def coo2_cel(cel_adj: CelAdj, blg: Tensor):
+def coo2_cel(cel_adj: CelAdj, blg: Tensor) -> Adj:
     pnt_pcl = _pnt_pcl(cel_adj, blg)  # n_bch, n_pcl, n_cnt
     _, _, n_cnt = pnt_pcl.size()
     nn, ii, jj, ss = cel_adj.adj.unbind(0)
@@ -30,11 +30,11 @@ def coo2_cel(cel_adj: CelAdj, blg: Tensor):
     i = pnt_pcl[nn, ii, :][:, :, None].expand(size)
     j = pnt_pcl[nn, jj, :][:, None, :].expand(size)
     s = ss[:, None, None].expand(size)
-    adj = contraction(n, i, j, s, cel_adj.sft)
+    adj = _contraction(n, i, j, s, cel_adj.sft)
     return Adj(adj=adj, sft=cel_adj.sft)
 
 
-def contraction(n, i, j, s, sft):
+def _contraction(n, i, j, s, sft):
     val_dum = (i >= 0) & (j >= 0)
     val_idt = (sft != 0).any(dim=-1)[s] | (i != j)
     val = val_dum & val_idt
