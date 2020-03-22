@@ -4,32 +4,32 @@ from . import functional as fn
 
 
 class Pnt(NamedTuple):
-    cel: Tensor  # lattice float(n_batch, n_dim, n_dim)
-    pbc: Tensor  # periodic boundary contition (n_batch, n_dim)
-    pos: Tensor  # xyz-positions float(n_batch, n_point, n_dim)
-    ent: Tensor  # entity bool(n_batch, n_point)
+    cel: Tensor  # float [n_batch, n_dim, n_dim]  : cells
+    pbc: Tensor  # bool  [n_batch, n_dim]         : periodic boundary contition
+    pos: Tensor  # float [n_batch, n_point, n_dim]: positions (xyz)
+    ent: Tensor  # bool  [n_batch, n_point]       : entity
 
 
 class PntExp(NamedTuple):
-    cel_mat: Tensor
-    cel_inv: Tensor
-    cel_rec: Tensor
-    pbc: Tensor
-    pos_xyz: Tensor
-    pos_cel: Tensor
-    ent: Tensor
+    cel_mat: Tensor  # Pnt.cel
+    cel_inv: Tensor  # Pnt.cel.inverse()
+    cel_rec: Tensor  # Pnt.cel.inverse().t()
+    pbc: Tensor      # Pnt.pbc
+    pos_xyz: Tensor  # Pnt.pos
+    pos_cel: Tensor  # Pnt.pos @ PntExp.cel_inv
+    ent: Tensor      # Pnt.ent
 
 
 class Adj(NamedTuple):
-    adj: Tensor
-    sft: Tensor
+    adj: Tensor  # int [...]          : Adjacent
+    sft: Tensor  # int [n_sft, n_dim] : shifts
 
 
 class VecSodAdj(NamedTuple):
-    vec: Tensor
-    sod: Tensor
-    adj: Tensor
-    sft: Tensor
+    vec: Tensor  # float [..., n_dim]
+    sod: Tensor  # float [...]
+    adj: Tensor  # float [...]
+    sft: Tensor  # int   [n_sft, n_dim]
 
 
 def contract(vsa: VecSodAdj, pe: PntExp, rc: float):

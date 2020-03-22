@@ -30,6 +30,6 @@ def coo3(neighbor: Tensor) -> Tensor:
             (idx[None, :, None] != idx[None, None, :]))
 
     base = fn.cumsum_from_zero(num)[torch.repeat_interleave(num * num - num)]
-    j3 = idx[None, :, None].expand(n, m, m)[filt] + base
-    k3 = idx[None, None, :].expand(n, m, m)[filt] + base
-    return torch.stack([inv[j3], inv[k3]])
+    j3 = idx[None, :, None].expand([n, m, m])[filt] + base
+    k3 = idx[None, None, :].expand([n, m, m])[filt] + base
+    return torch.stack([j3, k3])
