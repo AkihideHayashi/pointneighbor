@@ -1,11 +1,11 @@
-from ..type import PntExp, VecSodAdj
+from ..type import PntExp, AdjSftSizVecSod
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt, n_sft, n_dim)
 
 
-def coo2_ful_simple(pe: PntExp, rc: float) -> VecSodAdj:
+def coo2_ful_simple(pe: PntExp, rc: float) -> AdjSftSizVecSod:
     """Simple implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt, n_sft, n_dim) tensor and remove redundants.
     Low overhead but not efficient in terms of computational complexity.
@@ -35,5 +35,8 @@ def coo2_ful_simple(pe: PntExp, rc: float) -> VecSodAdj:
     val_cut = sod <= rc * rc
     val = val_ent & val_idt & val_pbc & val_cut
     adj = fn.aranges_like(sod)
-    ret = VecSodAdj(vec[val], sod[val], adj[:, val], sft_cel)
+    ret = AdjSftSizVecSod(
+        adj=adj[:, val], sft=sft_cel, siz=list(pe.ent.size()),
+        vec=vec[val], sod=sod[val],
+    )
     return ret

@@ -1,7 +1,7 @@
 from torch import Tensor
 import torch
 from .. import functional as fn
-from ..type import Adj
+from ..type import AdjSftSiz
 from .cel_adj import CelAdj
 
 
@@ -20,7 +20,7 @@ def _pnt_pcl(cel_adj: CelAdj, blg: Tensor):
     return ret
 
 
-def coo2_cel(cel_adj: CelAdj, blg: Tensor) -> Adj:
+def coo2_cel(cel_adj: CelAdj, blg: Tensor) -> AdjSftSiz:
     pnt_pcl = _pnt_pcl(cel_adj, blg)  # n_bch, n_pcl, n_cnt
     _, _, n_cnt = pnt_pcl.size()
     nn, ii, jj, ss = cel_adj.adj.unbind(0)
@@ -31,7 +31,7 @@ def coo2_cel(cel_adj: CelAdj, blg: Tensor) -> Adj:
     j = pnt_pcl[nn, jj, :][:, None, :].expand(size)
     s = ss[:, None, None].expand(size)
     adj = _contraction(n, i, j, s, cel_adj.sft)
-    return Adj(adj=adj, sft=cel_adj.sft)
+    return AdjSftSiz(adj=adj, sft=cel_adj.sft, siz=list(blg.size()))
 
 
 def _contraction(n, i, j, s, sft):

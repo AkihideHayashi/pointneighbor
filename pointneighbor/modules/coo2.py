@@ -1,9 +1,12 @@
+import logging
 import torch
 from torch import nn
 from .. import functional as fn
 from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft,
                     coo2_cel, cel_adj, cel_blg, CelAdj)
-from ..type import PntExp, VecSodAdj, vec_sod_adj, contract, Adj
+from ..type import PntExp, AdjSftSizVecSod, vec_sod_adj, contract, AdjSftSiz
+
+_logger = logging.getLogger(__name__)
 
 
 class Coo2FulSimple(nn.Module):
@@ -11,7 +14,7 @@ class Coo2FulSimple(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> VecSodAdj:
+    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
         return coo2_ful_simple(pe, self.rc)
 
 
@@ -20,7 +23,7 @@ class Coo2FulPntSft(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> VecSodAdj:
+    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
         return coo2_ful_pntsft(pe, self.rc)
 
 
@@ -66,7 +69,7 @@ class Coo2Cel(nn.Module):
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
 
-    def forward(self, pe: PntExp) -> VecSodAdj:
+    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
         ca = self.cel_adj(pe)
         blg = cel_blg(ca, pe)
         if torch.equal(blg, self.blg):
@@ -77,8 +80,8 @@ class Coo2Cel(nn.Module):
         self.sft = adj.sft
         return self.vsa(pe)
 
-    def vsa(self, pe: PntExp) -> VecSodAdj:
-        adj = Adj(adj=self.adj, sft=self.sft)
+    def vsa(self, pe: PntExp) -> AdjSftSizVecSod:
+        adj = AdjSftSiz(adj=self.adj, sft=self.sft, siz=list(pe.ent.size()))
         vsa = vec_sod_adj(pe, adj, self.rc)
         return contract(vsa, pe, self.rc)
 
@@ -96,13 +99,15 @@ class Coo2BookKeeping(nn.Module):
         self.sft = torch.tensor([])
 
     def forward(self, pe: PntExp):
-        if self.immute(pe):
-            return self.coo(pe)
-        self.register(pe)
+        if not self.immute(pe):
+            _logger.debug('Coo2BookKeeping: calc')
+            self.register(pe)
+        else:
+            _logger.debug('Coo2BookKeeping: skip')
         return self.coo(pe)
 
     def coo(self, pe: PntExp):
-        adj = Adj(self.adj, self.sft)
+        adj = AdjSftSiz(adj=self.adj, sft=self.sft, siz=list(pe.ent.size()))
         return contract(vec_sod_adj(pe, adj, self.rc), pe, self.rc)
 
     def register(self, pe: PntExp):
@@ -127,11 +132,11 @@ class Coo2BookKeeping(nn.Module):
         sft_exp_cel = (pe.pos_cel - self.pos_cel).round().to(torch.long)
         sft_exp_xyz = sft_exp_cel.to(self.cel_mat) @ self.cel_mat
 
-        ss = self.sft[s]
-        ss += sft_exp_cel[n, i]
-        ss -= sft_exp_cel[n, j]
+        ss = self.sft.clone()[s]
+        ss += sft_exp_cel[n, i] * pe.pbc[n, :]
+        ss -= sft_exp_cel[n, j] * pe.pbc[n, :]
         s = fn.ravel1(ss + num_rep[None, :], num_rep * 2 + 1, -1)
-        self.adj[-1, :] = s
+        self.adj = torch.stack([n, i, j, s])
         self.pos_cel += sft_exp_cel
         self.pos_xyz += sft_exp_xyz
 

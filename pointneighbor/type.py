@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, List
 from torch import Tensor
 from . import functional as fn
 
@@ -20,27 +20,35 @@ class PntExp(NamedTuple):
     ent: Tensor      # Pnt.ent
 
 
-class Adj(NamedTuple):
-    adj: Tensor  # int [...]          : Adjacent
-    sft: Tensor  # int [n_sft, n_dim] : shifts
+class AdjSftSiz(NamedTuple):
+    adj: Tensor     # int [...]          : Adjacent
+    sft: Tensor     # int [n_sft, n_dim] : shifts
+    siz: List[int]  # [n_bch, n_pnt]     : size
 
 
-class VecSodAdj(NamedTuple):
-    vec: Tensor  # float [..., n_dim]
-    sod: Tensor  # float [...]
-    adj: Tensor  # float [...]
-    sft: Tensor  # int   [n_sft, n_dim]
+class AdjSftSizVecSod(NamedTuple):
+    adj: Tensor     # float [...]
+    sft: Tensor     # int   [n_sft, n_dim]
+    siz: List[int]  # [n_bch, n_pnt]
+    vec: Tensor     # float [..., n_dim]
+    sod: Tensor     # float [...]
 
 
-def contract(vsa: VecSodAdj, pe: PntExp, rc: float):
+def contract(vsa: AdjSftSizVecSod, pe: PntExp, rc: float):
     n, i, j, _ = vsa.adj.unbind(0)
     ei = pe.ent[n, i]
     ej = pe.ent[n, j]
     val_cut = vsa.sod <= rc * rc
     val_ent = ei & ej
     val = val_cut & val_ent
-    return VecSodAdj(vec=vsa.vec[val], sod=vsa.sod[val],
-                     adj=vsa.adj[:, val], sft=vsa.sft)
+    return AdjSftSizVecSod(
+        adj=vsa.adj[:, val], sft=vsa.sft, siz=vsa.siz,
+        vec=vsa.vec[val], sod=vsa.sod[val],
+    )
+
+
+def pnt(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
+    return Pnt(cel=cel, pbc=pbc, pos=pos, ent=ent)
 
 
 def pnt_exp(p: Pnt):
@@ -60,10 +68,10 @@ def pnt_exp(p: Pnt):
     )
 
 
-def vec_sod_adj(pe: PntExp, adj: Adj, rc: float):
+def vec_sod_adj(pe: PntExp, adj: AdjSftSiz, rc: float):
     cel = pe.cel_mat
     pos_xyz = pe.pos_xyz
-    nijs, sft = adj
+    nijs, sft, _ = adj
     n, i, j, s = nijs.unbind(0)
     sft_xyz = sft.to(cel) @ cel
     ri = pos_xyz[n, i, :]
@@ -77,8 +85,11 @@ def vec_sod_adj(pe: PntExp, adj: Adj, rc: float):
     val_cut = sod <= rc * rc
     val_ent = ei & ej
     val = val_cut & val_ent
-    return VecSodAdj(vec=vec[val], sod=sod[val], adj=nijs[:, val], sft=sft)
+    return AdjSftSizVecSod(
+        adj=nijs[:, val], sft=sft, siz=adj.siz,
+        vec=vec[val], sod=sod[val],
+    )
 
 
-def vec_sod_adj_to_adj(vsa: VecSodAdj):
-    return Adj(adj=vsa.adj, sft=vsa.sft)
+def vec_sod_adj_to_adj(vsa: AdjSftSizVecSod):
+    return AdjSftSiz(adj=vsa.adj, sft=vsa.sft, siz=vsa.siz)

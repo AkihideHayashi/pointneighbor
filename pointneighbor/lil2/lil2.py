@@ -1,22 +1,34 @@
-from typing import List
 import torch
 from torch import Tensor
-from ..type import Adj
+from ..type import AdjSftSiz, AdjSftSizVecSod
 from .. import functional as fn
 
 
-def lil2(adj_coo: Adj, size: List[int]):
-    nijs, sft = adj_coo
+def lil2_adj_sft_siz_vec_sod(adj_coo: AdjSftSizVecSod):
+    _, _, j, s = adj_coo.adj.unbind(0)
+    mask = mask_coo_to_lil(AdjSftSiz(adj=adj_coo.adj,
+                                     sft=adj_coo.sft, siz=adj_coo.siz))
+    ret_j = coo_to_lil(j, mask, -1)
+    ret_s = coo_to_lil(s, mask, 0)
+    ret_adj = torch.stack([ret_j, ret_s])
+    ret_vec = coo_to_lil(adj_coo.vec, mask, 0)
+    ret_sod = coo_to_lil(adj_coo.sod, mask, 0)
+    return AdjSftSizVecSod(adj=ret_adj, sft=adj_coo.sft, siz=adj_coo.siz,
+                           vec=ret_vec, sod=ret_sod)
+
+
+def lil2_adj_sft_siz(adj_coo: AdjSftSiz):
+    nijs, sft, _ = adj_coo
     _, _, j, s = nijs.unbind(0)
-    val = mask_coo_to_lil(adj_coo, size)
+    val = mask_coo_to_lil(adj_coo)
     ret_s = coo_to_lil(s, val, 0)
     ret_j = coo_to_lil(j, val, -1)
     ret = torch.stack([ret_j, ret_s])
-    return Adj(adj=ret, sft=sft)
+    return AdjSftSiz(adj=ret, sft=sft, siz=adj_coo.siz)
 
 
-def mask_coo_to_lil(adj_coo: Adj, size: List[int]):
-    n_bch, n_pnt = size
+def mask_coo_to_lil(adj_coo: AdjSftSiz):
+    n_bch, n_pnt = adj_coo.siz
     nijs = adj_coo.adj
     n, i, _, _ = nijs.unbind(0)
     ni = n * n_pnt + i

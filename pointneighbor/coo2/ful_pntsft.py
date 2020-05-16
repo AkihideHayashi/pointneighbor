@@ -1,13 +1,13 @@
 import torch
 from torch import Tensor
-from ..type import PntExp, VecSodAdj
+from ..type import PntExp, AdjSftSizVecSod
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
 
 
-def coo2_ful_pntsft(pe: PntExp, rc: float) -> VecSodAdj:
+def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSizVecSod:
     """An implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
     tensor and remove redundants.
@@ -42,20 +42,22 @@ def coo2_ful_pntsft(pe: PntExp, rc: float) -> VecSodAdj:
     s = _transform(fn.arange([n_bch, n_pnt, n_sft], dim=2).to(device),
                    msk_f, msk_t)[:, None, :].expand_as(sod)
     adj = torch.stack([n[val], i[val], j[val], s[val]])
-    vsa = VecSodAdj(vec=vec[val], sod=sod[val], adj=adj, sft=sft_cel)
+    vsa = AdjSftSizVecSod(vec=vec[val], sod=sod[val],
+                          adj=adj, sft=sft_cel, siz=list(pe.ent.size()))
     ret = _contract_idt_ent(vsa, pe.ent)
     return ret
 
 
-def _contract_idt_ent(vsa: VecSodAdj, ent: Tensor):
-    vec, sod, adj, sft = vsa
+def _contract_idt_ent(vsa: AdjSftSizVecSod, ent: Tensor):
+    adj, sft, siz, vec, sod = vsa
     n, i, j, s = adj.unbind(0)
     z_sft = (sft == 0).all(dim=-1)
     val_idt = ~z_sft[s] | (i != j)
     ej = ent[n, j]
     val_ent = ej
     val = val_idt & val_ent
-    return VecSodAdj(vec=vec[val], sod=sod[val], adj=adj[:, val], sft=sft)
+    return AdjSftSizVecSod(vec=vec[val], sod=sod[val],
+                           adj=adj[:, val], sft=sft, siz=siz)
 
 
 def _transform(tensor: Tensor, val_f: Tensor, val_t: Tensor):

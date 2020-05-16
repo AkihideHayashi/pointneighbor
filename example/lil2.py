@@ -23,15 +23,14 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
     pe = pn.pnt_exp(p)
     vsa = pn.coo2_ful_simple(pe, rc)
-    adj = script(pn.lil2)(pn.vec_sod_adj_to_adj(vsa), p.ent.size())
+    adj = script(pn.lil2_adj_sft_siz)(pn.vec_sod_adj_to_adj(vsa))
 
-    mask_coo_to_lil = pn.mask_coo_to_lil(
-        pn.Adj(vsa.adj, vsa.sft), p.ent.size())
+    mask_coo_to_lil = pn.mask_coo_to_lil(pn.vec_sod_adj_to_adj(vsa))
 
     sod_lil = pn.coo_to_lil(vsa.sod, mask_coo_to_lil, 0)
     vec_lil = pn.coo_to_lil(vsa.vec, mask_coo_to_lil, 0)
-    assert (sod_lil == vsa_lil(adj, p)[1]).all()
-    assert (vec_lil == vsa_lil(adj, p)[0]).all()
+    assert torch.allclose(sod_lil, vsa_lil(adj, p)[1], atol=1e-5)
+    assert torch.allclose(vec_lil, vsa_lil(adj, p)[0], atol=1e-5)
 
 
 def vsa_lil(adj, p):
