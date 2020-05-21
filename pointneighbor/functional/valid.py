@@ -14,5 +14,6 @@ def val_idt(sft_ltc: Tensor, n_pnt: int):
     z_sft = (sft_ltc == 0).all(dim=-1)
     size = [n_pnt, n_pnt, n_sft]
     val = sft_ltc.new_full(size, 1, dtype=torch.bool)
-    val[:, :, z_sft] = ~torch.eye(n_pnt).to(sft_ltc)[:, :, None].to(torch.bool)
+    val[:, :, z_sft] = ~torch.eye(n_pnt, dtype=torch.bool,
+                                  device=sft_ltc.device)[:, :, None]
     return val[:, :, :]

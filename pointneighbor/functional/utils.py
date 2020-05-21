@@ -45,9 +45,10 @@ def expand_as_besides(tensor: Tensor, dims: List[int], dist: Tensor):
     return tensor.expand(shape)
 
 
-def arange(size: List[int], dim: int) -> Tensor:
+def arange(size: List[int], dim: int, device_tensor: Tensor) -> Tensor:
     dim = dim % len(size)
-    arange_ = torch.arange(size[dim], dtype=torch.int64)
+    arange_ = torch.arange(size[dim],
+                           dtype=torch.int64, device=device_tensor.device)
     unsqueeze_(arange_, [dim], len(size))
     return arange_.expand(size)
 
@@ -61,19 +62,20 @@ def arange_like(tensor: Tensor, dim: int) -> Tensor:
     return arange_.expand_as(tensor)
 
 
-def aranges(size: List[int]) -> Tensor:
-    return torch.stack([arange(size, i) for i, _ in enumerate(size)])
+def aranges(size: List[int], device_tensor: Tensor) -> Tensor:
+    return torch.stack([arange(size, i, device_tensor)
+                        for i, _ in enumerate(size)])
 
 
 def aranges_like(tensor: Tensor):
     size = list(tensor.size())
-    return aranges(size).to(device=tensor.device, dtype=torch.int64)
+    return aranges(size, tensor).to(device=tensor.device, dtype=torch.int64)
 
 
 def cumsum_from_zero(inp: Tensor, dim: int = 0):
     """Like torch.cumsum, but start from 0."""
     cumsum = torch.cumsum(inp, dim=dim)
-    narrow = cumsum.narrow(dim=dim, start=0, length=inp.shape[dim] - 1)
+    narrow = cumsum.narrow(dim=dim, start=0, length=max(0, inp.shape[dim] - 1))
     zero = torch.zeros([1]).to(inp)
     unsqueeze_like_(zero, [dim], inp)
     zero = expand_as_besides(zero, dims=[dim], dist=inp)
@@ -83,7 +85,7 @@ def cumsum_from_zero(inp: Tensor, dim: int = 0):
 def arange_prod(dims: Tensor):
     """Arange cartesian prod for each dimension."""
     assert dims.dim() == 1
-    aranges_ = [torch.arange(d.item()) for d in dims]
+    aranges_ = [torch.arange(d.item(), device=d.device) for d in dims]
     return cartesian_prod(aranges_)
 
 
