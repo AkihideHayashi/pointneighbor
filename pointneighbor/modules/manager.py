@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from ..type import Pnt, pnt_exp, PntExp, AdjSftSizVecSod
+from ..type import Pnt, pnt_exp, PntExp, AdjSftSpcVecSod
 
 
 class PntModule(nn.Module):
@@ -53,14 +53,14 @@ class Coo2AdjSftSizVecSod(nn.Module):
 
     def set(self, p: Pnt):
         pe: PntExp = self.pnt(p)
-        asvs: AdjSftSizVecSod = self.coo2(pe)
+        asvs: AdjSftSpcVecSod = self.coo2(pe)
         self.vec = asvs.vec
         self.sod = asvs.sod
         self.adj = asvs.adj
         self.sft = asvs.sft
 
     def get(self):
-        return AdjSftSizVecSod(vec=self.vec, sod=self.sod,
+        return AdjSftSpcVecSod(vec=self.vec, sod=self.sod,
                                adj=self.adj, sft=self.sft)
 
     def forward(self, p: Pnt):

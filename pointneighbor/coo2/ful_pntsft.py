@@ -1,13 +1,13 @@
 import torch
 from torch import Tensor
-from ..type import PntExp, AdjSftSizVecSod
+from ..type import PntExp, AdjSftSpc
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
 
 
-def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSizVecSod:
+def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSpc:
     """An implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
     tensor and remove redundants.
@@ -17,15 +17,18 @@ def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSizVecSod:
     This function is not efficient if your system is big.
     If lattice is uniform, coo2_fullindex_simple has less overhead.
     """
-    device = pe.pos_xyz.device
     n_bch, n_pnt, _ = pe.pos_xyz.size()
     num_rpt = fn.minimum_neighbor(pe.cel_rec, pe.pbc, rc)
     max_rpt, _ = num_rpt.max(dim=0)
     sft_cel = fn.arange_prod(max_rpt * 2 + 1) - max_rpt
     sft_xyz = sft_cel.to(pe.cel_mat) @ pe.cel_mat
     n_sft, _ = sft_cel.size()
-    pos_i = pe.pos_xyz
-    pos_j = pe.pos_xyz[:, :, None, :] + sft_xyz[:, None, :, :]
+    pos_xyz = fn.to_unit_cell(pe.pos_xyz.detach(), pe.sft_xyz.detach())
+    pos_i = pos_xyz
+    # pos_j = pos_xyz[:, :, None, :] + sft_xyz[:, None, :, :]
+    z = torch.zeros_like(sft_xyz[:, None, :, :])
+    pos_j = fn.vector(z, fn.vector(
+        z, pos_xyz[:, :, None, :], sft_xyz[:, None, :, :]), z)
 
     msk_f, msk_t = _mask_transform(sft_cel, num_rpt, pe.pbc, n_bch, n_pnt)
     pos_flt_j = _transform(pos_j, msk_f, msk_t)[:, None, :, :]
@@ -35,29 +38,29 @@ def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSizVecSod:
     val_cut = sod <= rc * rc
     ent_i = pe.ent[:, :, None]
     val = val_cut & msk_t[:, None, :] & ent_i
-    n = fn.arange([n_bch, n_pnt], dim=0).to(device)[:, :, None].expand_as(sod)
-    i = fn.arange([n_bch, n_pnt], dim=1).to(device)[:, :, None].expand_as(sod)
-    j = _transform(fn.arange([n_bch, n_pnt, n_sft], dim=1).to(device),
+    n = fn.arange([n_bch, n_pnt], 0, val)[:, :, None].expand_as(sod)
+    i = fn.arange([n_bch, n_pnt], 1, val)[:, :, None].expand_as(sod)
+    j = _transform(fn.arange([n_bch, n_pnt, n_sft], 1, val),
                    msk_f, msk_t)[:, None, :].expand_as(sod)
-    s = _transform(fn.arange([n_bch, n_pnt, n_sft], dim=2).to(device),
+    s = _transform(fn.arange([n_bch, n_pnt, n_sft], 2, val),
                    msk_f, msk_t)[:, None, :].expand_as(sod)
     adj = torch.stack([n[val], i[val], j[val], s[val]])
-    vsa = AdjSftSizVecSod(vec=vec[val], sod=sod[val],
-                          adj=adj, sft=sft_cel, siz=list(pe.ent.size()))
+    vsa = AdjSftSpc(adj=adj, sft=sft_cel, spc=pe.sft_cel)
     ret = _contract_idt_ent(vsa, pe.ent)
     return ret
 
 
-def _contract_idt_ent(vsa: AdjSftSizVecSod, ent: Tensor):
-    adj, sft, siz, vec, sod = vsa
-    n, i, j, s = adj.unbind(0)
-    z_sft = (sft == 0).all(dim=-1)
-    val_idt = ~z_sft[s] | (i != j)
+def _contract_idt_ent(vsa: AdjSftSpc, ent: Tensor):
+    """"contract identety and entities false.
+    remove using val_idt and val_ent.
+    """
+    n, i, j, s = vsa.adj.unbind(0)
+    z_sft = (vsa.sft == 0).all(dim=-1)
+    val_idt = (~z_sft[s]) | (i != j)
     ej = ent[n, j]
     val_ent = ej
     val = val_idt & val_ent
-    return AdjSftSizVecSod(vec=vec[val], sod=sod[val],
-                           adj=adj[:, val], sft=sft, siz=siz)
+    return AdjSftSpc(adj=vsa.adj[:, val], sft=vsa.sft, spc=vsa.spc)
 
 
 def _transform(tensor: Tensor, val_f: Tensor, val_t: Tensor):

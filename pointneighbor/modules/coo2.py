@@ -1,12 +1,9 @@
-import logging
 import torch
 from torch import nn
 from .. import functional as fn
-from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft,
+from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
                     coo2_cel, cel_adj, cel_blg, CelAdj)
-from ..type import PntExp, AdjSftSizVecSod, vec_sod_adj, contract, AdjSftSiz
-
-_logger = logging.getLogger(__name__)
+from ..type import (PntExp, AdjSftSpcVecSod, vec_sod_adj, contract, AdjSftSpc)
 
 
 class Coo2FulSimple(nn.Module):
@@ -14,8 +11,10 @@ class Coo2FulSimple(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
-        return coo2_ful_simple(pe, self.rc)
+    def forward(self, pe: PntExp) -> AdjSftSpcVecSod:
+        adj = coo2_ful_simple(pe, self.rc)
+        vsa = vec_sod_adj(pe, adj, self.rc)
+        return vsa
 
 
 class Coo2FulPntSft(nn.Module):
@@ -23,8 +22,10 @@ class Coo2FulPntSft(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
-        return coo2_ful_pntsft(pe, self.rc)
+    def forward(self, pe: PntExp) -> AdjSftSpcVecSod:
+        adj = coo2_ful_pntsft(pe, self.rc)
+        vsa = vec_sod_adj(pe, adj, self.rc)
+        return vsa
 
 
 class CelAdjModule(nn.Module):
@@ -32,16 +33,15 @@ class CelAdjModule(nn.Module):
         super().__init__()
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
-        self.div = torch.tensor([])
+        self.div = torch.tensor([], dtype=torch.long)
         self.rc = rc
         self.cel_mat = torch.tensor([])
         self.pbc = torch.tensor([], dtype=torch.bool)
 
     def forward(self, pe: PntExp):
-        if self.immute(pe):
-            return self.cell_adj()
-        ca = cel_adj(pe, self.rc)
-        self.register(ca)
+        if self.moved(pe):
+            ca = cel_adj(pe, self.rc)
+            self.register(ca)
         return self.cell_adj()
 
     def register(self, ca: CelAdj):
@@ -52,12 +52,13 @@ class CelAdjModule(nn.Module):
     def cell_adj(self):
         return CelAdj(adj=self.adj, sft=self.sft, div=self.div)
 
-    def immute(self, pe: PntExp):
-        if not torch.equal(self.cel_mat, pe.cel_mat):
-            return False
+    def moved(self, pe: PntExp):
+        div = cel_num_div(pe.cel_mat, self.rc)
+        if not torch.equal(self.div, div):
+            return True
         if not torch.equal(self.pbc, pe.pbc):
-            return False
-        return True
+            return True
+        return False
 
 
 class Coo2Cel(nn.Module):
@@ -68,26 +69,28 @@ class Coo2Cel(nn.Module):
         self.blg = torch.tensor([], dtype=torch.long)
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
+        self.spc = torch.tensor([])
 
-    def forward(self, pe: PntExp) -> AdjSftSizVecSod:
+    def forward(self, pe: PntExp) -> AdjSftSpcVecSod:
         ca = self.cel_adj(pe)
-        blg = cel_blg(ca, pe)
+        blg, sft = cel_blg(ca, pe)
         if torch.equal(blg, self.blg):
             return self.vsa(pe)
-        adj = coo2_cel(ca, blg)
+        adj = coo2_cel(ca, blg, sft)
         self.blg = blg
         self.adj = adj.adj
         self.sft = adj.sft
+        self.spc = adj.spc
         return self.vsa(pe)
 
-    def vsa(self, pe: PntExp) -> AdjSftSizVecSod:
-        adj = AdjSftSiz(adj=self.adj, sft=self.sft, siz=list(pe.ent.size()))
+    def vsa(self, pe: PntExp) -> AdjSftSpcVecSod:
+        adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
         vsa = vec_sod_adj(pe, adj, self.rc)
         return contract(vsa, pe, self.rc)
 
 
 class Coo2BookKeeping(nn.Module):
-    def __init__(self, coo2, rc: float, delta: float):
+    def __init__(self, coo2, rc: float, delta: float, debug: bool = False):
         super().__init__()
         self.coo2 = coo2(rc + delta)
         self.rc = rc
@@ -97,23 +100,28 @@ class Coo2BookKeeping(nn.Module):
         self.cel_mat = torch.tensor([])
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
+        self.spc = torch.tensor([])
+        self.debug = debug
 
     def forward(self, pe: PntExp):
         if not self.immute(pe):
-            _logger.debug('Coo2BookKeeping: calc')
+            if self.debug:
+                print('Coo2BookKeeping: calc')
             self.register(pe)
         else:
-            _logger.debug('Coo2BookKeeping: skip')
+            if self.debug:
+                print('Coo2BookKeeping: skip')
         return self.coo(pe)
 
     def coo(self, pe: PntExp):
-        adj = AdjSftSiz(adj=self.adj, sft=self.sft, siz=list(pe.ent.size()))
+        adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
         return contract(vec_sod_adj(pe, adj, self.rc), pe, self.rc)
 
     def register(self, pe: PntExp):
         adj = self.coo2(pe)
         self.adj = adj.adj
         self.sft = adj.sft
+        self.spc = adj.spc
         self.cel_mat = pe.cel_mat
         self.pos_xyz = pe.pos_xyz
         self.pos_cel = pe.pos_cel

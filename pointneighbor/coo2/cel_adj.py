@@ -36,10 +36,13 @@ def cel_adj(pe: PntExp, rc: float, num_div: Optional[Tensor] = None) -> CelAdj:
     pcl_i = pcl[None, :, None, :].expand(size)
     pcl_j = (pcl[None, :, None, :] + sft_pcl[None, None, :, :]).expand(size)
     pcl_mod_j = pcl_j % num_div[:, None, None, :]
-    sft_pcl_cel = torch.where(
+    o = torch.ones_like(pcl_j)
+    z = torch.zeros_like(pcl_j)
+    sign = fn.vector(z, fn.vector(z, z, o), z)
+    sft_pcl_cel = sign * torch.where(
         pcl_j >= 0,
-        pcl_j / num_div[:, None, None, :],
-        (pcl_j + 1) / num_div[:, None, None, :] - 1,
+        pcl_j // num_div[:, None, None, :],
+        (pcl_j + 1) // num_div[:, None, None, :] - 1,
     )
 
     val_pcl = _val_pcl(pcl_i, num_div) & _val_pcl(pcl_mod_j, num_div)
