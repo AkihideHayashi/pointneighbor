@@ -22,7 +22,7 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
 
     def using_pn():
-        pe = pn.pnt_exp(p)
+        pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
         vsa = pn.coo2_ful_simple(pe, rc)
         return vsa.adj.size()[1]
 

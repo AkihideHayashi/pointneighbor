@@ -20,7 +20,7 @@ def main():
               for _ in range(n_bch)]
     pbc = torch.tensor([[True, True, True] for _ in range(n_bch)])
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
-    pe = pn.pnt_exp(p)
+    pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
 
     def using_pn():
         vsa = pn.coo2_ful_simple(pe, rc)

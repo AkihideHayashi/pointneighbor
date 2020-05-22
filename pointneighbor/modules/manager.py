@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from ..type import Pnt, pnt_exp, PntExp, AdjSftSpcVecSod
+from ..type import Pnt, pnt_ful, PntFul, AdjSftSpcVecSod
 
 
 class PntModule(nn.Module):
@@ -15,7 +15,7 @@ class PntModule(nn.Module):
         self.pbc = torch.tensor([], dtype=torch.bool)
 
     def set(self, p: Pnt):
-        pe = pnt_exp(p)
+        pe = pnt_ful(p)
         self.cel_mat = pe.cel_mat
         self.cel_inv = pe.cel_inv
         self.cel_rec = pe.cel_rec
@@ -25,7 +25,7 @@ class PntModule(nn.Module):
         self.ent = pe.ent
 
     def get(self):
-        return PntExp(
+        return PntFul(
             cel_mat=self.cel_mat, cel_inv=self.cel_inv, cel_rec=self.cel_rec,
             pbc=self.pbc, pos_cel=self.pos_cel, pos_xyz=self.pos_xyz,
             ent=self.ent
@@ -52,7 +52,7 @@ class Coo2AdjSftSizVecSod(nn.Module):
         self.sft = torch.tensor([], dtype=torch.long)
 
     def set(self, p: Pnt):
-        pe: PntExp = self.pnt(p)
+        pe: PntFul = self.pnt(p)
         asvs: AdjSftSpcVecSod = self.coo2(pe)
         self.vec = asvs.vec
         self.sod = asvs.sod

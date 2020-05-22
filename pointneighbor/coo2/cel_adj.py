@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional
 from torch import Tensor
 import torch
 from .. import functional as fn
-from ..type import PntExp
+from ..type import PntFul
 
 
 class CelAdj(NamedTuple):
@@ -16,7 +16,7 @@ def cel_num_div(cel_mat: Tensor, rc: float) -> Tensor:
     return ndiv
 
 
-def cel_adj(pe: PntExp, rc: float, num_div: Optional[Tensor] = None) -> CelAdj:
+def cel_adj(pe: PntFul, rc: float, num_div: Optional[Tensor] = None) -> CelAdj:
     if not pe.pbc.all():
         raise RuntimeError('cell index is only for full pbc.')
     if num_div is None:

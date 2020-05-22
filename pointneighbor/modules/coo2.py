@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
                     coo2_cel, cel_adj, cel_blg, CelAdj)
-from ..type import (PntExp, AdjSftSpc)
+from ..type import (PntFul, AdjSftSpc)
 
 
 class Coo2FulSimple(nn.Module):
@@ -10,7 +10,7 @@ class Coo2FulSimple(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> AdjSftSpc:
+    def forward(self, pe: PntFul) -> AdjSftSpc:
         return coo2_ful_simple(pe, self.rc)
 
 
@@ -19,7 +19,7 @@ class Coo2FulPntSft(nn.Module):
         super().__init__()
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> AdjSftSpc:
+    def forward(self, pe: PntFul) -> AdjSftSpc:
         return coo2_ful_pntsft(pe, self.rc)
 
 
@@ -32,7 +32,7 @@ class CelAdjModule(nn.Module):
         self.pbc = torch.tensor([], dtype=torch.bool)
         self.rc = rc
 
-    def forward(self, pe: PntExp) -> CelAdj:
+    def forward(self, pe: PntFul) -> CelAdj:
         if self._moved(pe):
             ca = cel_adj(pe, self.rc)
             self.adj = ca.adj
@@ -41,7 +41,7 @@ class CelAdjModule(nn.Module):
             self.pbc = pe.pbc
         return CelAdj(adj=self.adj, sft=self.sft, div=self.div)
 
-    def _moved(self, pe: PntExp):
+    def _moved(self, pe: PntFul):
         div = cel_num_div(pe.cel_mat, self.rc)
         if not torch.equal(self.div, div):
             return True
@@ -60,7 +60,7 @@ class Coo2Cel(nn.Module):
         self.sft = torch.tensor([])
         self.spc = torch.tensor([])
 
-    def forward(self, pe: PntExp) -> AdjSftSpc:
+    def forward(self, pe: PntFul) -> AdjSftSpc:
         ca = self.cel_adj(pe)
         blg = cel_blg(ca, pe)
         if not torch.equal(blg, self.blg):
@@ -81,7 +81,7 @@ class Coo2BookKeeping(nn.Module):
         self.sft = torch.tensor([])
         self.spc = torch.tensor([])
 
-    def forward(self, pe: PntExp):
+    def forward(self, pe: PntFul):
         if self.criteria(pe):
             adj: AdjSftSpc = self.coo2(pe)
             self.adj = adj.adj
@@ -96,7 +96,7 @@ class VerletCriteria(nn.Module):
         self.n = n
         self.i = 0
 
-    def forward(self, _: PntExp):
+    def forward(self, _: PntFul):
         ret = self.i % self.n == 0
         self.i += 1
         return ret

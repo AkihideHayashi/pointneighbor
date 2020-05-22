@@ -1,10 +1,10 @@
 import torch
 from .. import functional as fn
-from ..type import PntExp
+from ..type import PntFul
 from .cel_adj import CelAdj
 
 
-def cel_blg(cel_adj: CelAdj, pe: PntExp):
+def cel_blg(cel_adj: CelAdj, pe: PntFul):
     pos_cel = fn.to_unit_cell(pe.pos_cel, pe.sft_cel)
     num_div = cel_adj.div[:, None, :]
     parcel = (num_div * pos_cel).floor().to(torch.int64)

@@ -30,7 +30,7 @@ def main():
     rc = 6.0
     atoms = [bulk('Pt') * (1, 1, 1)] + [bulk('Pt') * (4, 4, 4)] * 4
     p = ase_to_particles(atoms)
-    pe = pn.pnt_exp(p)
+    pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
 
     simple = script(pn.coo2_ful_simple)
     pntsft = script(pn.coo2_ful_pntsft)

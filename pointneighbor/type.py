@@ -3,21 +3,8 @@ from torch import Tensor
 from . import functional as fn
 
 
-class Pnt(NamedTuple):
-    """The standard, easy-to-use input format.
-    cel (float[n_bch, n_dim, n_dim]) : The cell vectors.
-    pbc (bool[n_bch, n_dim]) : periodic boundary condition.
-    pos (float[n_bch, n_pnt, n_dim]) : positions (xyz form)
-    ent (bool[n_bch, n_pnt]) : entity. (not dummy.)
-    """
-    cel: Tensor
-    pbc: Tensor
-    pos: Tensor
-    ent: Tensor
-
-
-class PntExp(NamedTuple):
-    """Expanded Point information.
+class PntFul(NamedTuple):
+    """Full spec Point information.
     The standerd full information struct to be used inside pointneighbor.
     """
     cel_mat: Tensor  # Pnt.cel
@@ -43,18 +30,15 @@ class VecSod(NamedTuple):
     sod: Tensor
 
 
-def pnt(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
-    return Pnt(cel=cel, pbc=pbc, pos=pos, ent=ent)
-
-
-def pnt_exp(p: Pnt):
-    cel_mat, pbc, pos_xyz, ent = p
+def pnt_ful(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
+    cel_mat = cel
+    pos_xyz = pos
     cel_inv = cel_mat.inverse()
     cel_rec = cel_inv.transpose(-2, -1)
     pos_cel = pos_xyz @ cel_inv
-    sft_cel = fn.get_pos_sft(pos_cel, p.pbc)
+    sft_cel = fn.get_pos_sft(pos_cel, pbc)
     sft_xyz = sft_cel @ cel_mat
-    return PntExp(
+    return PntFul(
         cel_mat=cel_mat,
         cel_inv=cel_inv,
         cel_rec=cel_rec,

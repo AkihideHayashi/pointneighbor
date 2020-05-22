@@ -1,13 +1,13 @@
 import torch
 from torch import Tensor
-from ..type import PntExp, AdjSftSpc
+from ..type import PntFul, AdjSftSpc
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
 
 
-def coo2_ful_pntsft(pe: PntExp, rc: float) -> AdjSftSpc:
+def coo2_ful_pntsft(pe: PntFul, rc: float) -> AdjSftSpc:
     """An implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
     tensor and remove redundants.

@@ -4,7 +4,13 @@ from torch import Tensor
 import torch
 from ase import Atoms
 from torchani import aev
-from pointneighbor import Pnt
+
+
+class Pnt(NamedTuple):
+    cel: Tensor
+    pbc: Tensor
+    pos: Tensor
+    ent: Tensor
 
 
 class CellParameter(NamedTuple):

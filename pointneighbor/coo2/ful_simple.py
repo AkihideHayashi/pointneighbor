@@ -1,9 +1,9 @@
-from ..type import PntExp, AdjSftSpc
+from ..type import PntFul, AdjSftSpc
 from .. import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt, n_sft, n_dim)
-def coo2_ful_simple(pe: PntExp, rc: float) -> AdjSftSpc:
+def coo2_ful_simple(pe: PntFul, rc: float) -> AdjSftSpc:
     """Simple implementation for make coo-like 2-body problem.
     Make (n_bch, n_pnt, n_pnt, n_sft, n_dim) tensor and remove redundants.
     Low overhead but not efficient in terms of computational complexity.

@@ -20,7 +20,7 @@ def main():
               for _ in range(n_bch)]
     pbc = torch.tensor([[True, True, True] for _ in range(n_bch)])
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
-    pe = pn.pnt_exp(p)
+    pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
     adj = pn.coo2_ful_simple(pe, rc)
     vec_sod = pn.coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
     adj_lil, (vec_lil, sod_lil) = pn.lil2_adj_sft_siz_vec_sod(adj, vec_sod)

@@ -3,7 +3,7 @@ import time
 import torch
 from torch.jit import script
 import pointneighbor as pn
-from common import random_particle, CellParameter
+from common import random_particle, CellParameter, Pnt
 
 
 def timeit(f):
@@ -13,7 +13,7 @@ def timeit(f):
     return e - s
 
 
-def number(mod, pe: pn.PntExp, rc):
+def number(mod, pe: pn.PntFul, rc):
     adj_ = mod(pe)
     adj, _ = pn.coo2_adj_vec_sod(adj_, pe.pos_xyz, pe.cel_mat, rc)
     return adj.adj.size(1)
@@ -37,16 +37,16 @@ def main():
         pn.Coo2FulSimple(rc + 1.0), pn.VerletCriteria(2)))
 
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
-    pe = pn.pnt_exp(p)
+    pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
     for _ in range(100):
         noise = torch.randn_like(pe.pos_xyz) * 0.05
-        p = pn.Pnt(
+        p = Pnt(
             pos=pe.pos_xyz + noise,
             cel=pe.cel_mat,
             pbc=pe.pbc,
             ent=pe.ent,
         )
-        pe = pn.pnt_exp(p)
+        pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
 
         n_fs = number(ful_simple, pe, rc)
         n_fp = number(ful_pntsft, pe, rc)
