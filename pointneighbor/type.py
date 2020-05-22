@@ -51,19 +51,6 @@ class AdjSftSpcVecSod(NamedTuple):
     sod: Tensor  # float [...]
 
 
-def contract(vsa: AdjSftSpcVecSod, pe: PntExp, rc: float):
-    n, i, j, _ = vsa.adj.unbind(0)
-    ei = pe.ent[n, i]
-    ej = pe.ent[n, j]
-    val_cut = vsa.sod <= rc * rc
-    val_ent = ei & ej
-    val = val_cut & val_ent
-    return AdjSftSpcVecSod(
-        adj=vsa.adj[:, val], sft=vsa.sft, spc=vsa.spc,
-        vec=vsa.vec[val], sod=vsa.sod[val],
-    )
-
-
 def pnt(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
     return Pnt(cel=cel, pbc=pbc, pos=pos, ent=ent)
 
