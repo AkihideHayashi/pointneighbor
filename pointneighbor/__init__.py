@@ -10,4 +10,4 @@ from .lil2 import (lil2_adj_sft_siz, mask_coo_to_lil, coo_to_lil,
                    lil2_adj_sft_siz_vec_sod)
 from .coo3 import coo3
 from .modules import (Coo2Cel, Coo2FulPntSft, Coo2FulSimple,
-                      Coo2BookKeeping, VerletCriteria)
+                      Coo2BookKeeping, VerletCriteria, StrictCriteria)

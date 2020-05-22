@@ -100,3 +100,36 @@ class VerletCriteria(nn.Module):
         ret = self.i % self.n == 0
         self.i += 1
         return ret
+
+
+class StrictCriteria(nn.Module):
+    def __init__(self, delta, debug: bool = False):
+        super().__init__()
+        self.delta = delta
+        self.do2 = delta / 2
+        self.pos_xyz = torch.tensor([])
+        self.cel_mat = torch.tensor([])
+        self.debug = debug
+
+    def forward(self, pnt: PntFul):
+        if self._criteria(pnt):
+            self.pos_xyz = pnt.pos_xyz
+            self.cel_mat = pnt.cel_mat
+            print('StrictCriteria: calc')
+            return True
+        else:
+            print('StrictCriteria: skip')
+            return False
+
+    def _criteria(self, pnt: PntFul):
+        cel_mat = pnt.cel_mat
+        pos_xyz = pnt.pos_xyz
+        if cel_mat.size() != self.cel_mat.size():
+            return True
+        if pos_xyz.size() != self.pos_xyz.size():
+            return True
+        if not torch.equal(cel_mat, self.cel_mat):
+            return True
+        if (self.pos_xyz - pos_xyz).pow(2).sum(-1).max() >= self.do2:
+            return True
+        return False

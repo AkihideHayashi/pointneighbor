@@ -34,7 +34,7 @@ def main():
     ful_pntsft = script(pn.Coo2FulPntSft(rc))
     cel = script(pn.Coo2Cel(rc))
     bok = script(pn.Coo2BookKeeping(
-        pn.Coo2FulSimple(rc + 1.0), pn.VerletCriteria(2)))
+        pn.Coo2FulSimple(rc + 1.0), pn.StrictCriteria(1.0)))
 
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
     pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
