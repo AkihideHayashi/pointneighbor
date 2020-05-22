@@ -43,14 +43,6 @@ class VecSod(NamedTuple):
     sod: Tensor
 
 
-class AdjSftSpcVecSod(NamedTuple):
-    adj: Tensor  # float [...]
-    sft: Tensor  # int   [n_sft, n_dim]
-    spc: Tensor  # int [n_bch, n_pnt: n_dim]
-    vec: Tensor  # float [..., n_dim]
-    sod: Tensor  # float [...]
-
-
 def pnt(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
     return Pnt(cel=cel, pbc=pbc, pos=pos, ent=ent)
 
@@ -73,36 +65,6 @@ def pnt_exp(p: Pnt):
         sft_xyz=sft_xyz,
         sft_cel=sft_cel,
     )
-
-
-def vec_sod_adj(pe: PntExp, adj: AdjSftSpc, rc: float):
-    cel = pe.cel_mat
-    pos_xyz = pe.pos_xyz
-    nijs = adj.adj
-    sft = adj.sft
-    n, i, j, s = nijs.unbind(0)
-    sft_xyz = sft.to(cel) @ cel
-    pos_xyz_unt = fn.to_unit_cell(pos_xyz, adj.spc @ pe.cel_mat)
-    assert fn.in_unit_cell(pos_xyz_unt @ pe.cel_inv, pe.ent)
-    ri = pos_xyz_unt[n, i, :]
-    rj = pos_xyz_unt[n, j, :]
-    rs = sft_xyz[n, s, :]
-    vec = fn.vector(ri, rj, rs)
-    sod = fn.square_of_distance(vec, dim=-1)
-    ent = pe.ent
-    ei = ent[n, i]
-    ej = ent[n, j]
-    val_cut = sod <= rc * rc
-    val_ent = ei & ej
-    val = val_cut & val_ent
-    return AdjSftSpcVecSod(
-        adj=nijs[:, val], sft=sft, spc=adj.spc,
-        vec=vec[val], sod=sod[val],
-    )
-
-
-def vec_sod_adj_to_adj(vsa: AdjSftSpcVecSod):
-    return AdjSftSpc(adj=vsa.adj, sft=vsa.sft, spc=vsa.spc)
 
 
 def coo2_vec(adj: AdjSftSpc, pos: Tensor, cel: Tensor):

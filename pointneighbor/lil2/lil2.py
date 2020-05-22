@@ -1,19 +1,20 @@
 import torch
 from torch import Tensor
-from ..type import AdjSftSpc, AdjSftSpcVecSod, vec_sod_adj_to_adj
+from ..type import AdjSftSpc, VecSod
 from .. import functional as fn
 
 
-def lil2_adj_sft_siz_vec_sod(adj_coo: AdjSftSpcVecSod):
+def lil2_adj_sft_siz_vec_sod(adj_coo: AdjSftSpc, vec_sod: VecSod):
     _, _, j, s = adj_coo.adj.unbind(0)
-    mask = mask_coo_to_lil(vec_sod_adj_to_adj(adj_coo))
+    mask = mask_coo_to_lil(adj_coo)
     ret_j = coo_to_lil(j, mask, -1)
     ret_s = coo_to_lil(s, mask, 0)
     ret_adj = torch.stack([ret_j, ret_s])
-    ret_vec = coo_to_lil(adj_coo.vec, mask, 0)
-    ret_sod = coo_to_lil(adj_coo.sod, mask, 0)
-    return AdjSftSpcVecSod(adj=ret_adj, sft=adj_coo.sft, spc=adj_coo.spc,
-                           vec=ret_vec, sod=ret_sod)
+    ret_vec = coo_to_lil(vec_sod.vec, mask, 0)
+    ret_sod = coo_to_lil(vec_sod.sod, mask, 0)
+    ret1 = AdjSftSpc(adj=ret_adj, sft=adj_coo.sft, spc=adj_coo.spc)
+    ret2 = VecSod(vec=ret_vec, sod=ret_sod)
+    return ret1, ret2
 
 
 def lil2_adj_sft_siz(adj_coo: AdjSftSpc):

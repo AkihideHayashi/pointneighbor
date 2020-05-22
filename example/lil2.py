@@ -22,11 +22,10 @@ def main():
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
     pe = pn.pnt_exp(p)
     adj = pn.coo2_ful_simple(pe, rc)
-    vsa = pn.vec_sod_adj(pe, adj, rc)
-    lil = pn.lil2_adj_sft_siz_vec_sod(vsa)
-    adj_lil = pn.lil2_adj_sft_siz(adj)
-    assert torch.allclose(lil.sod, vsa_lil(adj_lil, p)[1], atol=1e-5)
-    assert torch.allclose(lil.vec, vsa_lil(adj_lil, p)[0], atol=1e-5)
+    vec_sod = pn.coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
+    adj_lil, (vec_lil, sod_lil) = pn.lil2_adj_sft_siz_vec_sod(adj, vec_sod)
+    assert torch.allclose(sod_lil, vsa_lil(adj_lil, p)[1], atol=1e-5)
+    assert torch.allclose(vec_lil, vsa_lil(adj_lil, p)[0], atol=1e-5)
 
 
 def vsa_lil(adj, p):
