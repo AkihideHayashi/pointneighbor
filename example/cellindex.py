@@ -36,8 +36,8 @@ def main():
         return vsa.adj.size()[1]
 
     def using_pntsft():
-        blg, sft = get_blg(cel_adj, ep)
-        adj = get_adj(cel_adj, blg, sft)
+        blg = get_blg(cel_adj, ep)
+        adj = get_adj(cel_adj, blg, ep.sft_cel, ep.ent)
         vsa = get_vsa(ep, adj, rc)
         return vsa.adj.size()[1]
 

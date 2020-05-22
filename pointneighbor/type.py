@@ -17,6 +17,9 @@ class Pnt(NamedTuple):
 
 
 class PntExp(NamedTuple):
+    """Expanded Point information.
+    The standerd full information struct to be used inside pointneighbor.
+    """
     cel_mat: Tensor  # Pnt.cel
     cel_inv: Tensor  # Pnt.cel.inverse()
     cel_rec: Tensor  # Pnt.cel.inverse().t()
@@ -32,6 +35,12 @@ class AdjSftSpc(NamedTuple):
     adj: Tensor  # int [...]          : Adjacent
     sft: Tensor  # int [n_sft, n_dim] : shifts
     spc: Tensor  # int [n_bch, n_pnt: n_dim]
+
+
+class VecSod(NamedTuple):
+    """Vector and Square of distance."""
+    vec: Tensor
+    sod: Tensor
 
 
 class AdjSftSpcVecSod(NamedTuple):
@@ -117,3 +126,17 @@ def coo2_vec(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
     rj = pos_uni[n, j, :]
     rs = sft[n, s, :]
     return fn.vector(ri, rj, rs)
+
+
+def coo2_vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
+    vec = coo2_vec(adj, pos, cel)
+    sod = fn.square_of_distance(vec)
+    return VecSod(vec=vec, sod=sod)
+
+
+def coo2_adj_vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor, rc: float):
+    vec, sod = coo2_vec_sod(adj, pos, cel)
+    val = sod <= rc * rc
+    ret_adj = AdjSftSpc(adj=adj.adj[:, val], sft=adj.sft, spc=adj.spc)
+    ret_sod = VecSod(vec=vec[val, :], sod=sod[val])
+    return ret_adj, ret_sod

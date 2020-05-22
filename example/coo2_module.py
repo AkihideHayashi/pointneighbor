@@ -13,6 +13,12 @@ def timeit(f):
     return e - s
 
 
+def number(mod, pe: pn.PntExp, rc):
+    adj_ = mod(pe)
+    adj, _ = pn.coo2_adj_vec_sod(adj_, pe.pos_xyz, pe.cel_mat, rc)
+    return adj.adj.size(1)
+
+
 def main():
     if len(sys.argv) > 1:
         torch.manual_seed(int(sys.argv[1]))
@@ -27,7 +33,8 @@ def main():
     ful_simple = script(pn.Coo2FulSimple(rc))
     ful_pntsft = script(pn.Coo2FulPntSft(rc))
     cel = script(pn.Coo2Cel(rc))
-    bok = script(pn.Coo2BookKeeping(pn.Coo2FulSimple, rc, 1.0))
+    bok = script(pn.Coo2BookKeeping(
+        pn.Coo2FulSimple(rc + 1.0), pn.VerletCriteria(2)))
 
     p = random_particle(n_bch, n_pnt, n_dim, params, pbc)
     pe = pn.pnt_exp(p)
@@ -41,12 +48,12 @@ def main():
         )
         pe = pn.pnt_exp(p)
 
-        n_fs = ful_simple(pe).adj.size()[1]
-        n_fp = ful_pntsft(pe).adj.size()[1]
-        n_cl = cel(pe).adj.size()[1]
-        assert n_fs == n_fp == n_cl, (n_fs, n_fp, n_cl)
-        # n_bk = bok(pe).adj.size()[1]
-        # assert n_fs == n_fp == n_cl == n_bk, (n_fs, n_fp, n_cl, n_bk)
+        n_fs = number(ful_simple, pe, rc)
+        n_fp = number(ful_pntsft, pe, rc)
+        n_cl = number(cel, pe, rc)
+        # assert n_fs == n_fp == n_cl, (n_fs, n_fp, n_cl)
+        n_bk = number(bok, pe, rc)
+        assert n_fs == n_fp == n_cl == n_bk, (n_fs, n_fp, n_cl, n_bk)
         print(n_cl)
 
 

@@ -6,6 +6,9 @@ from .cel_adj import CelAdj
 
 
 def _pnt_pcl(cel_adj: CelAdj, blg: Tensor):
+    """
+    pnt_pcl[i, j, k] is k'th atom in j'th percel in i'th batch.
+    """
     blg_srt, idx = blg.sort()
     n_pcl = int(cel_adj.div.prod(dim=1).max().item())
     n_bch, _ = blg.size()
@@ -20,7 +23,8 @@ def _pnt_pcl(cel_adj: CelAdj, blg: Tensor):
     return ret
 
 
-def coo2_cel(cel_adj: CelAdj, blg: Tensor, spc: Tensor) -> AdjSftSpc:
+def coo2_cel(cel_adj: CelAdj,
+             blg: Tensor, spc: Tensor, ent: Tensor) -> AdjSftSpc:
     pnt_pcl = _pnt_pcl(cel_adj, blg)  # n_bch, n_pcl, n_cnt
     _, _, n_cnt = pnt_pcl.size()
     nn, ii, jj, ss = cel_adj.adj.unbind(0)
@@ -30,12 +34,15 @@ def coo2_cel(cel_adj: CelAdj, blg: Tensor, spc: Tensor) -> AdjSftSpc:
     i = pnt_pcl[nn, ii, :][:, :, None].expand(size)
     j = pnt_pcl[nn, jj, :][:, None, :].expand(size)
     s = ss[:, None, None].expand(size)
-    adj = _contraction(n, i, j, s, cel_adj.sft)
+    adj = _contraction(n, i, j, s, cel_adj.sft, ent)
     return AdjSftSpc(adj=adj, sft=cel_adj.sft, spc=spc)
 
 
-def _contraction(n, i, j, s, sft):
+def _contraction(n, i, j, s, sft, ent):
+    ei = ent[n, i]
+    ej = ent[n, j]
+    val_ent = ei & ej
     val_dum = (i >= 0) & (j >= 0)
     val_idt = (sft != 0).any(dim=-1)[s] | (i != j)
-    val = val_dum & val_idt
+    val = val_dum & val_idt & val_ent
     return torch.stack([n[val], i[val], j[val], s[val]])
