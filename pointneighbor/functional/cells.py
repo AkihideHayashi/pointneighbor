@@ -3,12 +3,12 @@ import torch
 from torch import Tensor
 
 
-def get_pos_sft(pos_cel: Tensor, pbc: Tensor):
+def get_pos_spc(pos_cel: Tensor, pbc: Tensor):
     return pos_cel.floor() * pbc[:, None, :]
 
 
-def to_unit_cell(pos: Tensor, sft: Tensor):
-    return pos - sft
+def to_unit_cell(pos: Tensor, spc: Tensor):
+    return pos - spc
 
 
 def in_unit_cell(pos_cel: Tensor, ent: Tensor):

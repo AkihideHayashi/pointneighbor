@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
                     coo2_cel, cel_adj, cel_blg, CelAdj)
-from ..type import (PntFul, AdjSftSpc)
+from ..type import (PntFul, AdjSftSpc, coo2_adj_vec_sod)
 
 
 class Coo2FulSimple(nn.Module):
@@ -64,22 +64,25 @@ class Coo2Cel(nn.Module):
         ca = self.cel_adj(pe)
         blg = cel_blg(ca, pe)
         if not torch.equal(blg, self.blg):
-            adj = coo2_cel(ca, blg, pe.sft_cel, pe.ent)
+            adj = coo2_cel(ca, blg, pe.spc_cel, pe.ent)
             self.blg = blg
             self.adj = adj.adj
             self.sft = adj.sft
             self.spc = adj.spc
-        return AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
+        adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
+        adj, _ = coo2_adj_vec_sod(adj, pe.pos_xyz, pe.cel_mat, self.rc)
+        return adj
 
 
 class Coo2BookKeeping(nn.Module):
-    def __init__(self, coo2, criteria):
+    def __init__(self, coo2, criteria, rc):
         super().__init__()
         self.coo2 = coo2
         self.criteria = criteria
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
         self.spc = torch.tensor([])
+        self.rc = rc
 
     def forward(self, pe: PntFul):
         if self.criteria(pe):
@@ -87,7 +90,9 @@ class Coo2BookKeeping(nn.Module):
             self.adj = adj.adj
             self.sft = adj.sft
             self.spc = adj.spc
-        return AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
+        adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
+        adj, _ = coo2_adj_vec_sod(adj, pe.pos_xyz, pe.cel_mat, self.rc)
+        return adj
 
 
 class VerletCriteria(nn.Module):
@@ -115,10 +120,12 @@ class StrictCriteria(nn.Module):
         if self._criteria(pnt):
             self.pos_xyz = pnt.pos_xyz
             self.cel_mat = pnt.cel_mat
-            print('StrictCriteria: calc')
+            if self.debug:
+                print('StrictCriteria: calc')
             return True
         else:
-            print('StrictCriteria: skip')
+            if self.debug:
+                print('StrictCriteria: skip')
             return False
 
     def _criteria(self, pnt: PntFul):

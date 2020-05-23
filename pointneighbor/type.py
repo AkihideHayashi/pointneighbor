@@ -1,4 +1,6 @@
 from typing import NamedTuple
+import warnings
+import torch
 from torch import Tensor
 from . import functional as fn
 
@@ -14,8 +16,8 @@ class PntFul(NamedTuple):
     pos_xyz: Tensor  # Pnt.pos
     pos_cel: Tensor  # Pnt.pos @ PntExp.cel_inv
     ent: Tensor      # Pnt.ent
-    sft_xyz: Tensor  # sft_xyz
-    sft_cel: Tensor  # sft_cel
+    spc_xyz: Tensor  # spc_xyz  # もしかして、divとかpclの方がいいかも
+    spc_cel: Tensor  # spc_cel
 
 
 class AdjSftSpc(NamedTuple):
@@ -36,8 +38,8 @@ def pnt_ful(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
     cel_inv = cel_mat.inverse()
     cel_rec = cel_inv.transpose(-2, -1)
     pos_cel = pos_xyz @ cel_inv
-    sft_cel = fn.get_pos_sft(pos_cel, pbc)
-    sft_xyz = sft_cel @ cel_mat
+    spc_cel = fn.get_pos_spc(pos_cel, pbc)
+    spc_xyz = spc_cel @ cel_mat
     return PntFul(
         cel_mat=cel_mat,
         cel_inv=cel_inv,
@@ -46,8 +48,8 @@ def pnt_ful(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
         pos_xyz=pos_xyz,
         pos_cel=pos_cel,
         ent=ent,
-        sft_xyz=sft_xyz,
-        sft_cel=sft_cel,
+        spc_xyz=spc_xyz,
+        spc_cel=spc_cel,
     )
 
 
@@ -73,3 +75,37 @@ def coo2_adj_vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor, rc: float):
     ret_adj = AdjSftSpc(adj=adj.adj[:, val], sft=adj.sft, spc=adj.spc)
     ret_sod = VecSod(vec=vec[val, :], sod=sod[val])
     return ret_adj, ret_sod
+
+
+def get_n_i_j(adj: AdjSftSpc):
+    if adj.adj.size(0) != 4:
+        raise RuntimeError()
+    n, i, j, _ = adj.adj.unbind(0)
+    return n, i, j
+
+
+def get_n_i_j_s(adj: AdjSftSpc):
+    warnings.warn('get_n_i_j_s is not tested.')
+    if adj.adj.size(0) != 4:
+        raise RuntimeError()
+    n, i, j, s = adj.adj.unbind(0)
+    spc = fn.to_unit_cell(torch.zeros_like(adj.spc), adj.spc)
+    spc_i = spc[n, i]
+    spc_j = spc[n, j]
+    sft = fn.vector(spc_i, spc_j, adj.sft[n, s])
+    return n, i, j, sft
+
+
+def get_lil2_j_s(adj: AdjSftSpc):
+    warnings.warn('get_lil2 is not tested.')
+    if adj.adj.size(0) != 2:
+        raise RuntimeError()
+    j, s = adj.adj.unbind(0)
+    assert j.dim() == 3  # n_bch, n_pnt, n_cnt
+    i = fn.arange_like(j, 1)
+    n = fn.arange_like(j, 0)
+    spc = fn.to_unit_cell(torch.zeros_like(adj.spc), adj.spc)
+    spc_i = spc[n, i]
+    spc_j = spc[n, j]
+    sft = fn.vector(spc_i, spc_j, adj.sft[s])
+    return j, sft

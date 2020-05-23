@@ -18,7 +18,7 @@ def coo2_ful_simple(pe: PntFul, rc: float) -> AdjSftSpc:
     sft_xyz = sft_cel.to(pe.cel_mat) @ pe.cel_mat.detach()
     _, n_pnt, _ = pe.pos_xyz.size()
     # (n_bch, n_pnt, n_pnt, n_sht, n_dim)
-    pos_xyz = fn.to_unit_cell(pe.pos_xyz.detach(), pe.sft_xyz.detach())
+    pos_xyz = fn.to_unit_cell(pe.pos_xyz.detach(), pe.spc_xyz.detach())
     pos_xyz_i = pos_xyz[:, :, None, None, :]
     pos_xyz_j = pos_xyz[:, None, :, None, :]
     sft_xyz_ij = sft_xyz[:, None, None, :, :]
@@ -41,6 +41,6 @@ def coo2_ful_simple(pe: PntFul, rc: float) -> AdjSftSpc:
     val = val_ent & val_idt & val_pbc & val_cut
     adj = fn.aranges_like(sod)
     ret = AdjSftSpc(
-        adj=adj[:, val], sft=sft_cel, spc=pe.sft_cel,
+        adj=adj[:, val], sft=sft_cel, spc=pe.spc_cel,
     )
     return ret

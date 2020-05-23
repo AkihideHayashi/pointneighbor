@@ -23,7 +23,7 @@ def coo2_ful_pntsft(pe: PntFul, rc: float) -> AdjSftSpc:
     sft_cel = fn.arange_prod(max_rpt * 2 + 1) - max_rpt
     sft_xyz = sft_cel.to(pe.cel_mat) @ pe.cel_mat
     n_sft, _ = sft_cel.size()
-    pos_xyz = fn.to_unit_cell(pe.pos_xyz.detach(), pe.sft_xyz.detach())
+    pos_xyz = fn.to_unit_cell(pe.pos_xyz.detach(), pe.spc_xyz.detach())
     pos_i = pos_xyz
     # pos_j = pos_xyz[:, :, None, :] + sft_xyz[:, None, :, :]
     z = torch.zeros_like(sft_xyz[:, None, :, :])
@@ -45,7 +45,7 @@ def coo2_ful_pntsft(pe: PntFul, rc: float) -> AdjSftSpc:
     s = _transform(fn.arange([n_bch, n_pnt, n_sft], 2, val),
                    msk_f, msk_t)[:, None, :].expand_as(sod)
     adj = torch.stack([n[val], i[val], j[val], s[val]])
-    vsa = AdjSftSpc(adj=adj, sft=sft_cel, spc=pe.sft_cel)
+    vsa = AdjSftSpc(adj=adj, sft=sft_cel, spc=pe.spc_cel)
     ret = _contract_idt_ent(vsa, pe.ent)
     return ret
 

@@ -19,7 +19,7 @@ def coo3(neighbor: Tensor) -> Tensor:
     i2_max = int(i2.max().item()) if len(i2) > 0 else 0
     ni2, _ = (i2 + (i2_max + 1) * n2).sort()
 
-    _, inv, num = torch.unique_consecutive(
+    _, _, num = torch.unique_consecutive(
         ni2, return_inverse=True, return_counts=True)
     n = len(num)
     m = int(num.max().item()) if len(num) > 0 else 0
