@@ -18,8 +18,8 @@ def in_unit_cell(pos_cel: Tensor, ent: Tensor):
     return in_.all()
 
 
-def minimum_neighbor(ltc_rec: Tensor, pbc: Tensor, rc: float) -> Tensor:
+def minimum_neighbor(cel_rec: Tensor, pbc: Tensor, rc: float) -> Tensor:
     """Minimum number of repeats required by the rc."""
-    max_repeats = ltc_rec.detach().norm(p=2, dim=-1) * rc
+    max_repeats = cel_rec.detach().norm(p=2, dim=-1) * rc
     repeats = max_repeats.ceil().to(torch.int64)
     return repeats * pbc.type_as(repeats)
