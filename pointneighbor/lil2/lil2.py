@@ -4,20 +4,20 @@ from ..type import AdjSftSpc, VecSod
 from .. import functional as fn
 
 
-def lil2_adj_sft_siz_vec_sod(adj_coo: AdjSftSpc, vec_sod: VecSod):
+def lil2_adj_sft_spc_vec_sod(adj_coo: AdjSftSpc, vec_sod_coo: VecSod):
     _, _, j, s = adj_coo.adj.unbind(0)
     mask = mask_coo_to_lil(adj_coo)
     ret_j = coo_to_lil(j, mask, -1)
     ret_s = coo_to_lil(s, mask, 0)
     ret_adj = torch.stack([ret_j, ret_s])
-    ret_vec = coo_to_lil(vec_sod.vec, mask, 0)
-    ret_sod = coo_to_lil(vec_sod.sod, mask, 0)
+    ret_vec = coo_to_lil(vec_sod_coo.vec, mask, 0)
+    ret_sod = coo_to_lil(vec_sod_coo.sod, mask, 0)
     ret1 = AdjSftSpc(adj=ret_adj, sft=adj_coo.sft, spc=adj_coo.spc)
     ret2 = VecSod(vec=ret_vec, sod=ret_sod)
     return ret1, ret2
 
 
-def lil2_adj_sft_siz(adj_coo: AdjSftSpc):
+def lil2_adj_sft_spc(adj_coo: AdjSftSpc):
     _, _, j, s = adj_coo.adj.unbind(0)
     val = mask_coo_to_lil(adj_coo)
     ret_s = coo_to_lil(s, val, 0)

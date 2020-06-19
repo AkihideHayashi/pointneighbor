@@ -26,6 +26,17 @@ class AdjSftSpc(NamedTuple):
     spc: Tensor  # int [n_bch, n_pnt: n_dim]
 
 
+def is_coo2(adj: AdjSftSpc):
+    # n, i, j, s
+    return (adj.adj.size(0) == 4) and (adj.adj.dim() == 2)
+
+
+def is_lil2(adj: AdjSftSpc):
+    # adj[n, i, 0] == j
+    # adj[n, i, 1] == s
+    return (adj.adj.size(0) == 2) and (adj.adj.dim() == 4)
+
+
 class VecSod(NamedTuple):
     """Vector and Square of distance."""
     vec: Tensor
@@ -54,6 +65,7 @@ def pnt_ful(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
 
 
 def coo2_vec(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
+    assert is_coo2(adj)
     n, i, j, s = adj.adj.unbind(0)
     pos_uni = fn.to_unit_cell(pos, adj.spc @ cel)
     sft = adj.sft.to(cel) @ cel
@@ -77,6 +89,36 @@ def coo2_adj_vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor, rc: float):
     return ret_adj, ret_sod
 
 
+def lil2_vec(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
+    assert is_lil2(adj)
+    pos_uni = fn.to_unit_cell(pos, adj.spc @ cel)
+    sft = adj.sft.to(cel) @ cel
+    j, s = adj.adj.unbind(0)
+    n_bch = pos.size(0)
+    i = torch.arange(n_bch, device=pos.device, dtype=torch.long)[:, None, None]
+    rj = pos_uni[i, j[:, :, :], :]
+    ri = pos_uni[:, :, None, :]
+    rs = sft[i, s[:, :, :], :]
+    vec = fn.vector(ri, rj, rs)
+    return torch.where(
+        j[:, :, :, None].expand_as(vec) >= 0, vec, torch.zeros_like(vec))
+
+
+def lil2_vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
+    vec = lil2_vec(adj, pos, cel)
+    sod = fn.square_of_distance(vec)
+    return VecSod(vec=vec, sod=sod)
+
+
+def vec_sod(adj: AdjSftSpc, pos: Tensor, cel: Tensor):
+    if is_coo2(adj):
+        return coo2_vec_sod(adj, pos, cel)
+    elif is_lil2(adj):
+        return lil2_vec_sod(adj, pos, cel)
+    else:
+        raise RuntimeError()
+
+
 def get_n_i_j(adj: AdjSftSpc):
     if adj.adj.size(0) != 4:
         raise RuntimeError()
@@ -97,9 +139,7 @@ def get_n_i_j_s(adj: AdjSftSpc):
 
 
 def get_lil2_j_s(adj: AdjSftSpc):
-    warnings.warn('get_lil2 is not tested.')
-    if adj.adj.size(0) != 2:
-        raise RuntimeError()
+    assert is_lil2(adj)
     j, s = adj.adj.unbind(0)
     assert j.dim() == 3  # n_bch, n_pnt, n_cnt
     i = fn.arange_like(j, 1)

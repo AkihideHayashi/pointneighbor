@@ -2,7 +2,7 @@ from torch import Tensor
 
 
 def vector(ri: Tensor, rj: Tensor, rs: Tensor):
-    return ri - rj + rs
+    return rj - ri + rs
 
 
 def square_of_distance(vec: Tensor, dim: int = -1):

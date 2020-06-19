@@ -91,9 +91,13 @@ def n_duo_multi_lattice(p: Pnt, rc: float):
 
 
 def random_particle(n_bch: int, n_pnt: int, n_dim: int,
-                    params: List[CellParameter], pbc: Tensor):
+                    params: List[CellParameter], pbc: Tensor,
+                    out: bool = False):
     cel = torch.stack([triu_cell(param) for param in params])
-    pos = torch.rand((n_bch, n_pnt, n_dim)) @ cel
+    if out:
+        pos = torch.rand((n_bch, n_pnt, n_dim)) @ cel * 4 - 2
+    else:
+        pos = torch.rand((n_bch, n_pnt, n_dim)) @ cel
     ent = torch.randint(-1, 3, (n_bch, n_pnt)) >= 0
     p = Pnt(cel, pbc, pos, ent)
     return p

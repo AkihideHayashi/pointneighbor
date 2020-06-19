@@ -15,7 +15,8 @@ def coo3(neighbor: Tensor) -> Tensor:
     # (0 0) (0 1) (0 2)
     # (1 0) (1 1) (1 2)
     # (2 0) (2 1) (2 2)
-    n2, i2, _, _ = neighbor.detach().unbind(0)
+    n2 = neighbor.detach()[0]
+    i2 = neighbor.detach()[1]
     i2_max = int(i2.max().item()) if len(i2) > 0 else 0
     ni2, _ = (i2 + (i2_max + 1) * n2).sort()
 
