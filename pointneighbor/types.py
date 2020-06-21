@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 from torch import Tensor
 from . import functional as fn
 
@@ -41,12 +41,15 @@ class VecSod(NamedTuple):
     sod: Tensor
 
 
-def pnt_ful(cel: Tensor, pbc: Tensor, pos: Tensor, ent: Tensor):
-    cel_mat = cel
-    pos_xyz = pos
-    cel_inv = cel_mat.inverse()
-    cel_rec = cel_inv.transpose(-2, -1)
-    pos_cel = pos_xyz @ cel_inv
+def pnt_ful(cel_mat: Tensor, pbc: Tensor, pos_xyz: Tensor, ent: Tensor,
+            cel_inv: Optional[Tensor] = None, cel_rec: Optional[Tensor] = None,
+            pos_cel: Optional[Tensor] = None):
+    if cel_inv is None:
+        cel_inv = cel_mat.inverse()
+    if cel_rec is None:
+        cel_rec = cel_inv.transpose(-2, -1)
+    if pos_cel is None:
+        pos_cel = pos_xyz @ cel_inv
     spc_cel = fn.get_pos_spc(pos_cel, pbc)
     spc_xyz = spc_cel @ cel_mat
     return PntFul(

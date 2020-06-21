@@ -4,6 +4,7 @@ from ..neighbor.coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
                              coo2_cel, cel_adj, cel_blg, CelAdj)
 from ..types import PntFul, AdjSftSpc
 from ..utils import cutoff_coo2, coo2_vec_sod
+from .storage import AdjSftSpcStorage
 
 
 class Coo2FulSimple(nn.Module):
@@ -57,10 +58,7 @@ class Coo2Cel(nn.Module):
         self.rc = rc
         self.cel_adj = CelAdjModule(rc)
         self.blg = torch.tensor([], dtype=torch.long)
-        self.adj = torch.tensor([])
-        self.sft = torch.tensor([])
-        self.spc = torch.tensor([])
-        # TODO: use AdjSftSpcStrage
+        self.adj = AdjSftSpcStorage()
 
     def forward(self, pe: PntFul) -> AdjSftSpc:
         ca = self.cel_adj(pe)
@@ -68,10 +66,8 @@ class Coo2Cel(nn.Module):
         if not torch.equal(blg, self.blg):
             adj = coo2_cel(ca, blg, pe.spc_cel, pe.ent)
             self.blg = blg
-            self.adj = adj.adj
-            self.sft = adj.sft
-            self.spc = adj.spc
-        adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
+            self.adj(adj)
+        adj = self.adj()
         vec_sod = coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
         adj_cut, _ = cutoff_coo2(adj, vec_sod, self.rc)
         return adj_cut
