@@ -19,7 +19,7 @@ def main():
     adj = lil2(pf)
     vec, sod = pn.lil2_vec_sod(adj, p.pos, p.cel)
     dis: Tensor = sod.sqrt()
-    j, s = pn.get_lil2_j_s(adj)
+    j, s = pn.lil2_j_s(adj)
     dis_sc, vec_sc = atom_distances(p.pos, j, p.cel, s,
                                     neighbor_mask=(j >= 0).to(torch.long),
                                     return_vecs=True, normalize_vecs=False)

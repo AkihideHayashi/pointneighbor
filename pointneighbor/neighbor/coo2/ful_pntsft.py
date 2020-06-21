@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
-from ..type import PntFul, AdjSftSpc
-from .. import functional as fn
+from ...types import PntFul, AdjSftSpc
+from ... import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)

@@ -1,9 +1,21 @@
 import torch
 from torch import Tensor
-from .. import functional as fn
+from ... import functional as fn
 
 
 def coo3(neighbor: Tensor) -> Tensor:
+    """calculate coo3.
+
+    Args:
+        neighbor: adj.adj
+
+    Returns:
+        coo3 == torch.stack([j3, k3])
+        if n2, i2, j2, k2 == adj.adj.unbind(0):
+            i2[j3] == i2[k3] == triple center. (exact i3)
+            j2[j3] == exact j3
+            j2[k3] == exact k3
+    """
     # num is number of bond for each atoms.
     # For example, if num == [2, 3]
     # make (2, 3, 3) tensor and remove |i, j| and (i, i).

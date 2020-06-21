@@ -1,5 +1,5 @@
-from ..type import PntFul, AdjSftSpc
-from .. import functional as fn
+from ...types import PntFul, AdjSftSpc
+from ... import functional as fn
 
 
 # (n_bch, n_pnt, n_pnt, n_sft, n_dim)

@@ -1,7 +1,7 @@
 """Provides a criterion for whether or not a point has "moved enough"."""
 import torch
 from torch import nn, Tensor
-from ..type import PntFul
+from ..types import PntFul
 
 
 def _moved(a, b):

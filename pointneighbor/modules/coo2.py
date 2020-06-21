@@ -1,8 +1,9 @@
 import torch
 from torch import nn
-from ..coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
-                    coo2_cel, cel_adj, cel_blg, CelAdj)
-from ..type import (PntFul, AdjSftSpc, coo2_adj_vec_sod)
+from ..neighbor.coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
+                             coo2_cel, cel_adj, cel_blg, CelAdj)
+from ..types import PntFul, AdjSftSpc
+from ..utils import cutoff_coo2, coo2_vec_sod
 
 
 class Coo2FulSimple(nn.Module):
@@ -59,6 +60,7 @@ class Coo2Cel(nn.Module):
         self.adj = torch.tensor([])
         self.sft = torch.tensor([])
         self.spc = torch.tensor([])
+        # TODO: use AdjSftSpcStrage
 
     def forward(self, pe: PntFul) -> AdjSftSpc:
         ca = self.cel_adj(pe)
@@ -70,8 +72,9 @@ class Coo2Cel(nn.Module):
             self.sft = adj.sft
             self.spc = adj.spc
         adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
-        adj, _ = coo2_adj_vec_sod(adj, pe.pos_xyz, pe.cel_mat, self.rc)
-        return adj
+        vec_sod = coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
+        adj_cut, _ = cutoff_coo2(adj, vec_sod, self.rc)
+        return adj_cut
 
 
 class Coo2BookKeeping(nn.Module):
@@ -91,5 +94,6 @@ class Coo2BookKeeping(nn.Module):
             self.sft = adj.sft
             self.spc = adj.spc
         adj = AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
-        adj, _ = coo2_adj_vec_sod(adj, pe.pos_xyz, pe.cel_mat, self.rc)
+        vec_sod = coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
+        adj, _ = cutoff_coo2(adj, vec_sod, self.rc)
         return adj

@@ -1,7 +1,7 @@
 from typing import Optional
 import torch
 from torch import nn
-from ..type import AdjSftSpc
+from ..types import AdjSftSpc
 
 
 class AdjSftSpcStorage(nn.Module):
@@ -18,7 +18,7 @@ class AdjSftSpcStorage(nn.Module):
             self.spc = adj.spc
         return AdjSftSpc(adj=self.adj, sft=self.sft, spc=self.spc)
 
-    def empty(self):
+    def is_empty(self):
         if self.adj.size(0) == 0:
             assert self.sft.size(0) == 0
             assert self.spc.size(0) == 0

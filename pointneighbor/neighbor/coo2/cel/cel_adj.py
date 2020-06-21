@@ -1,19 +1,36 @@
 from typing import NamedTuple, Optional
 from torch import Tensor
 import torch
-from .. import functional as fn
-from ..type import PntFul
+from .... import functional as fn
+from ....types import PntFul
 
 
 class CelAdj(NamedTuple):
+    """Cell adjacent information.
+    adj: (= n, i, j, s) adjacent information
+    sft (int[bch, sft, dim]): shift information
+    div (int[bch, dim]): The number of parcel for each direction?
+
+    sft[n, s] is the direct shift.
+
+    """
     adj: Tensor
     sft: Tensor
     div: Tensor
 
 
 def cel_num_div(cel_mat: Tensor, rc: float) -> Tensor:
-    ndiv = ((cel_mat / rc).norm(p=2, dim=-1) - 1e-4).floor().to(torch.int64)
-    return ndiv
+    """Number of percel for each direction.
+
+    Args:
+        cel_mat: cell.
+        rc: cutoff radius.
+
+    Returns:
+        num_div(int[bch, dim]): number of percel for each direction.
+    """
+    num_div = ((cel_mat / rc).norm(p=2, dim=-1) - 1e-4).floor().to(torch.int64)
+    return num_div
 
 
 def cel_adj(pe: PntFul, rc: float, num_div: Optional[Tensor] = None) -> CelAdj:

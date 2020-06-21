@@ -1,6 +1,7 @@
 import time
 import torch
 import pointneighbor as pn
+from pointneighbor.neighbor.lil2.lil2 import __coo2_to_lil_adj_sft_spc_vec_sod
 from common import random_particle, CellParameter
 
 
@@ -23,7 +24,8 @@ def main():
     pe = pn.pnt_ful(p.cel, p.pbc, p.pos, p.ent)
     adj = pn.coo2_ful_simple(pe, rc)
     vec_sod = pn.coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
-    adj_lil, (vec_lil, sod_lil) = pn.lil2_adj_sft_spc_vec_sod(adj, vec_sod)
+    adj_lil, (vec_lil, sod_lil) = __coo2_to_lil_adj_sft_spc_vec_sod(
+        adj, vec_sod)
     _, sod_lil_formal = pn.lil2_vec_sod(adj_lil, pe.pos_xyz, pe.cel_mat)
     assert torch.allclose(sod_lil, vsa_lil(adj_lil, p)[1], atol=1e-5)
     assert torch.allclose(vec_lil, vsa_lil(adj_lil, p)[0], atol=1e-5)
