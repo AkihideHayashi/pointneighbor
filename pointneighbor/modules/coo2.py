@@ -25,7 +25,7 @@ class Coo2FulPntSft(nn.Module):
         return coo2_ful_pntsft(pe, self.rc)
 
 
-class CelAdjModule(nn.Module):
+class _CelAdjModule(nn.Module):
     def __init__(self, rc: float):
         super().__init__()
         self.adj = torch.tensor([])
@@ -56,7 +56,7 @@ class Coo2Cel(nn.Module):
     def __init__(self, rc: float):
         super().__init__()
         self.rc = rc
-        self.cel_adj = CelAdjModule(rc)
+        self.cel_adj = _CelAdjModule(rc)
         self.blg = torch.tensor([], dtype=torch.long)
         self.adj = AdjSftSpcStorage()
 

@@ -1,7 +1,7 @@
 from typing import Optional
 import torch
 from torch import nn
-from ..types import AdjSftSpc
+from ..types import AdjSftSpc, VecSod
 
 
 class AdjSftSpcStorage(nn.Module):
@@ -26,4 +26,25 @@ class AdjSftSpcStorage(nn.Module):
         else:
             assert self.sft.size(0) != 0
             assert self.spc.size(0) != 0
+            return False
+
+
+class VecSodStrage(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.vec = torch.tensor([])
+        self.sod = torch.tensor([])
+
+    def forward(self, vec_sod: Optional[VecSod] = None):
+        if vec_sod is not None:
+            self.vec = vec_sod.vec
+            self.sod = vec_sod.sod
+        return VecSod(vec=self.vec, sod=self.sod)
+
+    def is_empty(self):
+        if self.vec.size(0) == 0:
+            assert self.sod.size(0) == 0
+            return True
+        else:
+            assert self.sod.size(0) != 0
             return False
