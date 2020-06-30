@@ -2,3 +2,4 @@
 from .coo2 import (Coo2FulSimple, Coo2FulPntSft, Coo2Cel, Coo2BookKeeping)
 from .criteria import MovedCriteria, VerletCriteria, StrictCriteria
 from .storage import AdjSftSpcStorage, VecSodStrage
+from .neighbor import Coo2Neighbor, Lil2Neighbor, Neighbor

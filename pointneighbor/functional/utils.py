@@ -121,7 +121,10 @@ def ravel(index: Tensor, size: Tensor, dim: int):
 
 @script
 def cartesian_prod(inputs: List[Tensor]) -> Tensor:
-    return torch.cartesian_prod(inputs)
+    if len(inputs) == 1:
+        return torch.cartesian_prod(inputs)[:, None]
+    else:
+        return torch.cartesian_prod(inputs)
 
 
 def where_int(condition: Tensor, if_true: Tensor, if_false: int) -> Tensor:

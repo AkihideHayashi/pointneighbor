@@ -1,8 +1,8 @@
 from typing import Tuple
 import torch
 from torch import Tensor
-from .types import AdjSftSpc, VecSod, is_coo2, is_lil2
-from . import functional as fn
+from ..types import AdjSftSpc, VecSod, is_coo2, is_lil2
+from .. import functional as fn
 
 
 def cutoff_coo2(adj: AdjSftSpc, vec_sod: VecSod, rc: float

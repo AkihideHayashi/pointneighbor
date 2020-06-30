@@ -64,16 +64,20 @@ class Neighbor(nn.Module):
 
         coo2_keys = sorted(coo2_dict)
         self.coo = nn.ModuleList([coo2_dict[key] for key in coo2_keys])
-        self.lil = nn.ModuleList([lil2_dict[key] for key in coo2_keys
-                                  if key in lil2_dict])
-        lil2_pos = [i for i, key in enumerate(coo2_keys) if key in lil2_dict]
-        self.lil2_pnt = torch.tensor(lil2_pos)
+        self.lil = nn.ModuleList(
+            [lil2_dict[key] if key in lil2_dict else torch.nn.Identity()
+             for key in coo2_keys])
         self.adj = adj
 
     def forward(self, pf: PntFul):
         master: AdjSftSpc = self.adj(pf)
         vec_sod = coo2_vec_sod(master, pf.pos_xyz, pf.cel_mat)
-        for i, coo in enumerate(self.coo):
-            coo(master, vec_sod)
-        for i, lil in enumerate(self.lil):
-            lil(self.coo[int(self.lil2_pnt[i].item())]())
+        for coo, lil in zip(self.coo, self.lil):
+            adj = coo(master, vec_sod)
+            lil(adj)
+
+        # for i, coo in enumerate(self.coo):
+        #     coo(master, vec_sod)
+        # for i, lil in enumerate(self.lil):
+        #     adj_coo: AdjSftSpc = self.coo[i]()
+        #     lil(adj_coo)
