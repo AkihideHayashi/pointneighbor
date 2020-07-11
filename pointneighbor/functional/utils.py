@@ -84,7 +84,7 @@ def cumsum_from_zero(inp: Tensor, dim: int = 0):
 
 def arange_prod(dims: Tensor):
     """Arange cartesian prod for each dimension."""
-    assert dims.dim() == 1
+    assert dims.dim() == 1, dims
     aranges_ = [torch.arange(d.item(), device=d.device) for d in dims]
     return cartesian_prod(aranges_)
 
