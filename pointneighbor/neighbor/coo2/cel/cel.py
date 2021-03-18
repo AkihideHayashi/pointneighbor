@@ -5,6 +5,16 @@ from ....types import AdjSftSpc
 from .cel_adj import CelAdj
 
 
+def _sort_coo2(adj_coo: AdjSftSpc):
+    n, i, j, s = adj_coo.adj.unbind(0)
+    i_max = i.max() + 5
+    j_max = j.max() + 5
+    s_max = s.max() + 5
+    x = ((n * i_max + i) * j_max + j) * s_max + s
+    _, idx = x.sort()
+    return AdjSftSpc(adj_coo.adj[:, idx], adj_coo.sft, adj_coo.spc)
+
+
 def coo2_cel(cel_adj: CelAdj, blg: Tensor,
              spc: Tensor, ent: Tensor) -> AdjSftSpc:
     """Main code which generate adjacent
@@ -24,7 +34,7 @@ def coo2_cel(cel_adj: CelAdj, blg: Tensor,
     j = pnt_pcl[nn, jj, :][:, None, :].expand(size)
     s = ss[:, None, None].expand(size)
     adj = _contraction(n, i, j, s, cel_adj.sft, ent)
-    return AdjSftSpc(adj=adj, sft=cel_adj.sft, spc=spc)
+    return _sort_coo2(AdjSftSpc(adj=adj, sft=cel_adj.sft, spc=spc))
 
 
 def _pnt_pcl(cel_adj: CelAdj, blg: Tensor) -> Tensor:

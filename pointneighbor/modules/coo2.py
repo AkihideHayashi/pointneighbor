@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import nn, Tensor
 from ..neighbor.coo2 import (coo2_ful_simple, coo2_ful_pntsft, cel_num_div,
                              coo2_cel, cel_adj, cel_blg, CelAdj)
 from ..types import PntFul, AdjSftSpc
@@ -26,12 +26,17 @@ class Coo2FulPntSft(nn.Module):
 
 
 class _CelAdjModule(nn.Module):
+    adj: Tensor
+    sft: Tensor
+    div: Tensor
+    pbc: Tensor
+
     def __init__(self, rc: float):
         super().__init__()
-        self.adj = torch.tensor([])
-        self.sft = torch.tensor([])
-        self.div = torch.tensor([], dtype=torch.long)
-        self.pbc = torch.tensor([], dtype=torch.bool)
+        self.register_buffer('adj', torch.tensor([]))
+        self.register_buffer('sft', torch.tensor([]))
+        self.register_buffer('div', torch.tensor([], dtype=torch.long))
+        self.register_buffer('pbc', torch.tensor([], dtype=torch.bool))
         self.rc = rc
 
     def forward(self, pe: PntFul) -> CelAdj:
@@ -53,11 +58,13 @@ class _CelAdjModule(nn.Module):
 
 
 class Coo2Cel(nn.Module):
+    blg: Tensor
+
     def __init__(self, rc: float):
         super().__init__()
         self.rc = rc
         self.cel_adj = _CelAdjModule(rc)
-        self.blg = torch.tensor([], dtype=torch.long)
+        self.register_buffer('blg', torch.tensor([], dtype=torch.long))
         self.adj = AdjSftSpcStorage()
 
     def forward(self, pe: PntFul) -> AdjSftSpc:
@@ -74,13 +81,17 @@ class Coo2Cel(nn.Module):
 
 
 class Coo2BookKeeping(nn.Module):
+    adj: Tensor
+    sft: Tensor
+    spc: Tensor
+
     def __init__(self, coo2, criteria, rc):
         super().__init__()
         self.coo2 = coo2
         self.criteria = criteria
-        self.adj = torch.tensor([])
-        self.sft = torch.tensor([])
-        self.spc = torch.tensor([])
+        self.register_buffer('adj', torch.tensor([]))
+        self.register_buffer('sft', torch.tensor([]))
+        self.register_buffer('spc', torch.tensor([]))
         self.rc = rc
 
     def forward(self, pe: PntFul):

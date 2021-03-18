@@ -6,6 +6,15 @@ from ... import functional as fn
 
 # (n_bch, n_pnt, n_pnt x n_sft - delta, n_dim)
 
+def _sort_coo2(adj_coo: AdjSftSpc):
+    n, i, j, s = adj_coo.adj.unbind(0)
+    i_max = i.max() + 5
+    j_max = j.max() + 5
+    s_max = s.max() + 5
+    x = ((n * i_max + i) * j_max + j) * s_max + s
+    _, idx = x.sort()
+    return AdjSftSpc(adj_coo.adj[:, idx], adj_coo.sft, adj_coo.spc)
+
 
 def coo2_ful_pntsft(pe: PntFul, rc: float) -> AdjSftSpc:
     """An implementation for make coo-like 2-body problem.
@@ -47,7 +56,7 @@ def coo2_ful_pntsft(pe: PntFul, rc: float) -> AdjSftSpc:
     adj = torch.stack([n[val], i[val], j[val], s[val]])
     vsa = AdjSftSpc(adj=adj, sft=sft_cel, spc=pe.spc_cel)
     ret = _contract_idt_ent(vsa, pe.ent)
-    return ret
+    return _sort_coo2(ret)
 
 
 def _contract_idt_ent(vsa: AdjSftSpc, ent: Tensor):

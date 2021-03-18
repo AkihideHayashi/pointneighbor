@@ -131,10 +131,9 @@ def where_int(condition: Tensor, if_true: Tensor, if_false: int) -> Tensor:
     return torch.where(condition, if_true, torch.ones_like(if_true) * if_false)
 
 
-def count_number(sorted_tensor, size: List[int]):
-    unique, _, count = torch.unique_consecutive(sorted_tensor, True, True)
-    dest = torch.zeros(size).to(unique)
-    return torch.scatter(dest, 0, unique, count)
+def count_number(tensor, size: List[int]):
+    dest = torch.zeros(size).to(tensor)
+    return dest.scatter_add_(0, tensor, torch.ones_like(tensor))
 
 
 def replace_dummy(tensor: Tensor, dummy: int, to: int):

@@ -23,6 +23,13 @@ def number(mod, pe: pn.PntFul):
     return adj.adj.size(1)
 
 
+def sort(mod, pe: pn.PntFul):
+    adj = mod(pe)
+    vec_sod = pn.coo2_vec_sod(adj, pe.pos_xyz, pe.cel_mat)
+    sod = vec_sod.sod
+    return sod.sort()[0]
+
+
 def using_torchani(pe: pn.PntFul):
     spc = pn.functional.get_pos_spc(pe.pos_cel, pe.pbc)
     pos_cel = pn.functional.to_unit_cell(pe.pos_cel, spc)
@@ -42,7 +49,7 @@ def main():
     if len(sys.argv) > 1:
         torch.manual_seed(int(sys.argv[1]))
     n_bch = 1
-    n_pnt = 40
+    n_pnt = 160
     n_dim = 3
     rc = 6.0
     params = [CellParameter(30.0, 30.0, 30.0, 1.0, 1.0, 1.0)
@@ -71,9 +78,12 @@ def main():
         n_fp = number(ful_pntsft, pe)
         n_cl = number(cel, pe)
         n_ta = using_torchani(pe)
+        s_fs = sort(ful_simple, pe)
+        s_cl = sort(cel, pe)
         # assert n_fs == n_fp == n_cl, (n_fs, n_fp, n_cl)
         n_bk = number(bok, pe)
         assert n_fs == n_fp == n_cl == n_bk, (n_fs, n_fp, n_cl, n_bk, n_ta)
+        assert (s_fs == s_cl).all()
         print(n_cl, n_ta, pe.spc_cel.max())
 
 

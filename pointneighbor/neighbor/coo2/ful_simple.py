@@ -2,6 +2,18 @@ from ...types import PntFul, AdjSftSpc
 from ... import functional as fn
 
 
+def _sort_coo2(adj_coo: AdjSftSpc):
+    n, i, j, s = adj_coo.adj.unbind(0)
+    if i.numel() == 0:
+        return adj_coo
+    i_max = i.max() + 5
+    j_max = j.max() + 5
+    s_max = s.max() + 5
+    x = ((n * i_max + i) * j_max + j) * s_max + s
+    _, idx = x.sort()
+    return AdjSftSpc(adj_coo.adj[:, idx], adj_coo.sft, adj_coo.spc)
+
+
 # (n_bch, n_pnt, n_pnt, n_sft, n_dim)
 def coo2_ful_simple(pe: PntFul, rc: float) -> AdjSftSpc:
     """Simple implementation for make coo-like 2-body problem.
@@ -43,4 +55,4 @@ def coo2_ful_simple(pe: PntFul, rc: float) -> AdjSftSpc:
     ret = AdjSftSpc(
         adj=adj[:, val], sft=sft_cel, spc=pe.spc_cel,
     )
-    return ret
+    return _sort_coo2(ret)

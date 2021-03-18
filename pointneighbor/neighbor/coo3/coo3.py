@@ -30,7 +30,7 @@ def coo3(neighbor: Tensor) -> Tensor:
     n2 = neighbor.detach()[0]
     i2 = neighbor.detach()[1]
     i2_max = int(i2.max().item()) if len(i2) > 0 else 0
-    ni2, _ = (i2 + (i2_max + 1) * n2).sort()
+    ni2 = (i2 + (i2_max + 1) * n2)
 
     _, _, num = torch.unique_consecutive(
         ni2, return_inverse=True, return_counts=True)
